@@ -1,0 +1,10 @@
+[Unit]
+Description=Hermes-Trafficcontrol Evidence-Cleanup
+Documentation=https://github.com/.../hermes-trafficcontrol
+
+[Service]
+Type=oneshot
+User=traffic
+EnvironmentFile=/opt/trafficcontrol/.env
+ExecStart=/usr/bin/curl -fsS -X POST \
+    "http://127.0.0.1:7890/api/v1/admin/cleanup-evidence?older_than_days=30"

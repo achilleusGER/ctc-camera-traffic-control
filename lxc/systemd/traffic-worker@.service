@@ -1,0 +1,33 @@
+[Unit]
+Description=Hermes-Trafficcontrol Worker (Kamera %i)
+Documentation=https://github.com/.../hermes-trafficcontrol
+After=network.target traffic-backend.service
+Wants=traffic-backend.service
+
+[Service]
+Type=simple
+User=traffic
+Group=traffic
+WorkingDirectory=/opt/trafficcontrol/src/worker
+Environment=CAMERA_ID=%i
+EnvironmentFile=/opt/trafficcontrol/.env
+ExecStart=/opt/trafficcontrol/src/worker/.venv/bin/python -m worker.main
+Restart=always
+RestartSec=5
+TimeoutStopSec=15
+
+# Pro Worker-Instanz: 2,5 CPU-Kerne, 1,5 GB RAM
+# Bei 4 Kameras ergibt das 10 Kerne + 6 GB — passt ins 16/14-Budget.
+CPUQuota=250%
+MemoryMax=2G
+MemoryHigh=1500M
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/trafficcontrol
+
+[Install]
+WantedBy=multi-user.target

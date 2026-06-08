@@ -1,0 +1,35 @@
+[Unit]
+Description=Hermes-Trafficcontrol Backend (FastAPI)
+Documentation=https://github.com/.../hermes-trafficcontrol
+After=network.target postgresql.service redis-server.service
+Wants=postgresql.service redis-server.service
+
+[Service]
+Type=simple
+User=traffic
+Group=traffic
+WorkingDirectory=/opt/trafficcontrol/src/backend
+EnvironmentFile=/opt/trafficcontrol/.env
+ExecStart=/opt/trafficcontrol/src/backend/.venv/bin/uvicorn app.main:app \
+    --host 127.0.0.1 \
+    --port 7890 \
+    --workers 1 \
+    --log-level info
+Restart=always
+RestartSec=5
+TimeoutStopSec=15
+
+# Resource limits (CGroups v2) — kommentieren für mehr Headroom
+CPUQuota=200%
+MemoryMax=2G
+MemoryHigh=1500M
+
+# Hardening
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/var/lib/trafficcontrol
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,10 @@
+[Unit]
+Description=Hermes-Trafficcontrol Evidence-Cleanup Timer (täglich 03:00)
+
+[Timer]
+OnCalendar=*-*-* 03:00:00
+Persistent=true
+Unit=traffic-cleanup.service
+
+[Install]
+WantedBy=timers.target
