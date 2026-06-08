@@ -34,8 +34,8 @@ LXC_MEMORY=12288        # MB
 LXC_SWAP=2048
 LXC_DISK=64             # GB
 LXC_BRIDGE=vmbr0
-LXC_IP="10.10.1.250/24"
-LXC_GW="10.10.1.1"
+LXC_IP="dhcp"           # Default: DHCP, mit --ip CIDR ueberschreibbar
+LXC_GW=""               # nur bei statischer IP noetig
 LXC_STORAGE="local-lvm"
 TEMPLATE_STORAGE="local"
 TEMPLATE_NAME="debian-12-standard_12.2_1.amd64.tar.zst"
@@ -74,8 +74,8 @@ ${BOLD}Usage:${CLR} $0 [OPTIONS]
 ${BOLD}Options:${CLR}
   --id ID            LXC-ID (default: ${LXC_ID})
   --hostname NAME    Hostname  (default: ${LXC_HOSTNAME})
-  --ip CIDR          IP/Maske  (default: ${LXC_IP})
-  --gw IP            Gateway   (default: ${LXC_GW})
+  --ip CIDR|dhcp     IP/Maske oder 'dhcp' (default: ${LXC_IP})
+  --gw IP            Gateway   (nur bei statischer IP; default: ${LXC_GW:-n/a})
   --bridge NAME      Linux-Bridge  (default: ${LXC_BRIDGE})
   --cores N          CPU-Kerne  (default: ${LXC_CORES})
   --memory MB        RAM in MB   (default: ${LXC_MEMORY})
@@ -89,8 +89,8 @@ ${BOLD}Options:${CLR}
   --help             Diese Hilfe
 
 ${BOLD}Beispiele:${CLR}
-  $0 --id 240                                      # Standard
-  $0 --id 241 --ip 10.10.1.251/24                  # andere IP
+  $0 --id 240                                      # Standard (DHCP)
+  $0 --id 241 --ip 10.10.1.251/24 --gw 10.10.1.1   # statische IP
   $0 --id 240 --unattended --run-setup             # CI/Automation
 
 EOF
@@ -129,7 +129,7 @@ cat <<EOF
   LXC-ID:       ${LXC_ID}
   Hostname:     ${LXC_HOSTNAME}
   CPU/RAM/Disk: ${LXC_CORES} Kerne / ${LXC_MEMORY} MB / ${LXC_DISK} GB
-  Netz:         ${LXC_IP} via ${LXC_BRIDGE} (GW ${LXC_GW})
+  Netz:         ${LXC_IP} via ${LXC_BRIDGE}${LXC_GW:+ (GW ${LXC_GW})}
   Storage:      ${LXC_STORAGE}
   Template:     ${TEMPLATE_NAME}
   Remote:       ${REMOTE}@${BRANCH}
@@ -165,6 +165,19 @@ TEMPLATE_PATH="${TEMPLATE_STORAGE}:vztmpl/${TEMPLATE_NAME}"
 msg_step "LXC ${LXC_ID} erstellen"
 PASSWORD="$(openssl rand -base64 18)"
 
+# Netz-Konfig: DHCP oder statische IP
+if [[ "${LXC_IP,,}" == "dhcp" ]]; then
+    NET0_OPT="name=eth0,bridge=${LXC_BRIDGE},ip=dhcp"
+    msg_info "Netz: DHCP"
+else
+    if [[ -z "${LXC_GW}" ]]; then
+        msg_err "Statische IP (${LXC_IP}) braucht --gw. Beispiel: --gw 10.10.1.1"
+        exit 1
+    fi
+    NET0_OPT="name=eth0,bridge=${LXC_BRIDGE},ip=${LXC_IP},gw=${LXC_GW}"
+    msg_info "Netz: ${LXC_IP} via GW ${LXC_GW}"
+fi
+
 PCT_OPTS=(
     "${LXC_ID}" "${TEMPLATE_PATH}"
     --hostname "${LXC_HOSTNAME}"
@@ -172,7 +185,7 @@ PCT_OPTS=(
     --memory "${LXC_MEMORY}"
     --swap "${LXC_SWAP}"
     --rootfs "${LXC_STORAGE}:${LXC_DISK}"
-    --net0 "name=eth0,bridge=${LXC_BRIDGE},ip=${LXC_IP},gw=${LXC_GW}"
+    --net0 "${NET0_OPT}"
     --features "nesting=1"
     --onboot 1
     --unprivileged 1
@@ -195,19 +208,43 @@ msg_ok "LXC ${LXC_ID} erstellt. Passwort: ${PASSWORD}"
 msg_step "LXC starten"
 pct start "${LXC_ID}"
 
-LXC_IP_PLAIN="${LXC_IP%/*}"
-msg_info "Warte auf Netzwerk in ${LXC_IP_PLAIN}..."
-for i in $(seq 1 30); do
-    if pct exec "${LXC_ID}" -- ping -c 1 -W 1 8.8.8.8 &>/dev/null; then
-        msg_ok "Netzwerk nach ${i}*2s verfuegbar."
-        break
-    fi
-    sleep 2
-    if [[ $i -eq 30 ]]; then
-        msg_err "LXC hat nach 60s kein Netzwerk. Pruefen: pct enter ${LXC_ID} ; ip a"
-        exit 1
-    fi
-done
+# Bei DHCP kennen wir die IP nicht im Voraus -> nach dem Start aus dem LXC auslesen
+get_lxc_ip() {
+    pct exec "${LXC_ID}" -- bash -c "
+        ip -4 -o addr show dev eth0 2>/dev/null | awk '{print \$4}' | head -1
+    " 2>/dev/null | tr -d '\n' || true
+}
+
+if [[ "${LXC_IP,,}" == "dhcp" ]]; then
+    msg_info "Warte auf DHCP im LXC..."
+    LXC_IP_PLAIN=""
+    for i in $(seq 1 30); do
+        LXC_IP_PLAIN=$(get_lxc_ip)
+        if [[ -n "${LXC_IP_PLAIN}" ]] && pct exec "${LXC_ID}" -- ping -c 1 -W 1 8.8.8.8 &>/dev/null; then
+            msg_ok "LXC hat DHCP-IP: ${LXC_IP_PLAIN} (nach ${i}*2s)"
+            break
+        fi
+        sleep 2
+        if [[ $i -eq 30 ]]; then
+            msg_err "LXC hat nach 60s keine DHCP-IP. Pruefen: pct enter ${LXC_ID} ; ip a"
+            exit 1
+        fi
+    done
+else
+    LXC_IP_PLAIN="${LXC_IP%/*}"
+    msg_info "Warte auf Netzwerk in ${LXC_IP_PLAIN}..."
+    for i in $(seq 1 30); do
+        if pct exec "${LXC_ID}" -- ping -c 1 -W 1 8.8.8.8 &>/dev/null; then
+            msg_ok "Netzwerk nach ${i}*2s verfuegbar."
+            break
+        fi
+        sleep 2
+        if [[ $i -eq 30 ]]; then
+            msg_err "LXC hat nach 60s kein Netzwerk. Pruefen: pct enter ${LXC_ID} ; ip a"
+            exit 1
+        fi
+    done
+fi
 
 # ── Repo klonen ───────────────────────────────────────────────────────
 msg_step "Repo klonen"

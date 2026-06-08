@@ -10,11 +10,7 @@ Verkehrszählung + Geschwindigkeitsmessung auf einem Debian-12-LXC, nativ, ohne 
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/achilleusGER/ctc-camera-traffic-control/main/lxc/proxmox-install.sh)"
 ```
 
-Mit eigenen Werten:
-
-```bash
-bash lxc/proxmox-install.sh --id 240 --ip 10.10.1.250/24 --unattended --run-setup
-```
+**Standard: DHCP** (LAN-Tool, du brauchst keine feste IP). Mit `--ip CIDR --gw IP` für statische IP:
 
 Alle Optionen: `bash lxc/proxmox-install.sh --help`
 
