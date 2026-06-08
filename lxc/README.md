@@ -45,13 +45,12 @@ Im LXC als root:
 ```bash
 cd /tmp
 # Repo clonen (einmalig, danach liegen Code + Skripte lokal)
-# TODO: Repo-URL eintragen, sobald Git-Remote konfiguriert ist
-# git clone <repo-url> /opt/trafficcontrol/src
+git clone https://github.com/achilleusGER/ctc-camera-traffic-control.git /opt/trafficcontrol/src
 
 # Praxistipp: in der Entwicklung oft rsync vom Mac (ssh-Key vorausgesetzt):
-rsync -avz --exclude='.venv' --exclude='node_modules' --exclude='.git' \
-    /Users/andreaskutter/Programmierung/Hermes-Trafficcontrol/ \
-    traffic@10.10.1.250:/opt/trafficcontrol/src/
+# rsync -avz --exclude='.venv' --exclude='node_modules' --exclude='.git' \
+#     /Users/andreaskutter/Programmierung/Hermes-Trafficcontrol/ \
+#     traffic@10.10.1.250:/opt/trafficcontrol/src/
 
 cd /opt/trafficcontrol/src/lxc
 bash setup.sh

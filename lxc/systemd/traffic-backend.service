@@ -1,6 +1,6 @@
 [Unit]
 Description=Hermes-Trafficcontrol Backend (FastAPI)
-Documentation=https://github.com/.../hermes-trafficcontrol
+Documentation=https://github.com/achilleusGER/ctc-camera-traffic-control
 After=network.target postgresql.service redis-server.service
 Wants=postgresql.service redis-server.service
 

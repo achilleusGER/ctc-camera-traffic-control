@@ -1,6 +1,6 @@
 [Unit]
 Description=Hermes-Trafficcontrol Evidence-Cleanup
-Documentation=https://github.com/.../hermes-trafficcontrol
+Documentation=https://github.com/achilleusGER/ctc-camera-traffic-control
 
 [Service]
 Type=oneshot

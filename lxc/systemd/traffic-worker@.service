@@ -1,6 +1,6 @@
 [Unit]
 Description=Hermes-Trafficcontrol Worker (Kamera %i)
-Documentation=https://github.com/.../hermes-trafficcontrol
+Documentation=https://github.com/achilleusGER/ctc-camera-traffic-control
 After=network.target traffic-backend.service
 Wants=traffic-backend.service
 
