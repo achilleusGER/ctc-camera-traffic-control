@@ -1,0 +1,39 @@
+{
+  "camera": {
+    "id": 1,
+    "name": "Test-Cam",
+    "rtsp_url_low": "rtsps://user:pass@10.10.1.252:7441/Bs72Pfo22lMugAAd?enableSrtp",
+    "rtsp_url_high": null,
+    "width": 1920,
+    "height": 1080,
+    "infer_width": 1280,
+    "fps_limit": 12,
+    "default_speed_limit_kmh": 50.0,
+    "alpr_enabled": false,
+    "model_variant": "m",
+    "enabled": true
+  },
+  "lines": [
+    {
+      "id": 1,
+      "name": "Einfahrt Nord",
+      "points": [[200, 700], [1500, 700]],
+      "direction_in_label": "northbound",
+      "direction_out_label": "southbound",
+      "speed_limit_kmh": 50.0
+    },
+    {
+      "id": 2,
+      "name": "Ausfahrt Nord",
+      "points": [[200, 800], [1500, 800]],
+      "direction_in_label": "northbound",
+      "direction_out_label": "southbound",
+      "speed_limit_kmh": 50.0
+    }
+  ],
+  "calibration": {
+    "source_points": [[200, 600], [1500, 600], [1500, 900], [200, 900]],
+    "target_width_m": 8.0,
+    "target_height_m": 6.0
+  }
+}
