@@ -1,16 +1,32 @@
-// Hermes-Trafficcontrol — Frontend-Skelett (Phase 0)
-// Phase 3 füllt LiveView, Dashboard, Violations, Reports, CameraAdmin, Calibration.
+// App.tsx — Router, TanStack Query, Layout
+
+import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { QueryClientProvider } from "@tanstack/react-query";
+import { queryClient } from "./api/client";
+import { Layout } from "./components/Layout";
+import { Dashboard } from "./pages/Dashboard";
+import { LiveView } from "./pages/LiveView";
+import { Violations } from "./pages/Violations";
+import { Reports } from "./pages/Reports";
+import { CameraAdmin } from "./pages/CameraAdmin";
+import { Calibration } from "./pages/Calibration";
+import "./styles/globals.css";
 
 export default function App() {
   return (
-    <main style={{ padding: '2rem', fontFamily: 'system-ui' }}>
-      <h1>Hermes-Trafficcontrol</h1>
-      <p>Phase 0 — Frontend-Skelett. Funktion folgt in Phase 3.</p>
-      <ul>
-        <li>Backend: <code>http://127.0.0.1:7890</code></li>
-        <li>Health: <code>/health</code></li>
-        <li>API-Docs: <code>/docs</code></li>
-      </ul>
-    </main>
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="live" element={<LiveView />} />
+            <Route path="violations" element={<Violations />} />
+            <Route path="reports" element={<Reports />} />
+            <Route path="cameras" element={<CameraAdmin />} />
+            <Route path="calibration/:id" element={<Calibration />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+    </QueryClientProvider>
   );
 }

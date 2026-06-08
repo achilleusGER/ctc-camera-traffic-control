@@ -1,0 +1,75 @@
+/* Hallmark · LiveView, H6 Photographic fold */
+
+.live { display: flex; flex-direction: column; gap: var(--space-5); }
+
+.live__header { display: flex; flex-direction: column; gap: var(--space-2); }
+.live__title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-style: italic;
+  margin: 0;
+}
+.live__sub { color: var(--color-muted); font-size: var(--text-sm); }
+
+.live__frame {
+  background: oklch(8% 0.005 75);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-lg);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  margin: 0;
+}
+
+.live__img {
+  width: 100%;
+  aspect-ratio: 16 / 9;
+  object-fit: contain;
+  background: oklch(6% 0.003 75);
+  border-radius: var(--radius-md);
+}
+
+.live__caption {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+}
+.live__cam-name { color: var(--color-ink); font-style: italic; }
+.live__limit   { color: var(--color-accent); }
+
+.live__empty {
+  text-align: center;
+  padding: var(--space-9);
+  color: var(--color-muted);
+  font-style: italic;
+  border: 1px dashed var(--color-rule);
+  border-radius: var(--radius-lg);
+}
+.live__empty a { color: var(--color-accent); border-bottom-color: var(--color-accent); }
+
+.live__picker {
+  list-style: none;
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  margin: 0;
+  padding: 0;
+}
+.live-picker {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-2) var(--space-4);
+  font-size: var(--text-sm);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-pill);
+  background: var(--color-paper-2);
+  color: var(--color-ink-2);
+}
+.live-picker--active { border-color: var(--color-accent); color: var(--color-accent); }
+.live-picker__dot { width: 6px; height: 6px; border-radius: 50%; }
+.live-picker__dot--ok   { background: var(--color-ok); }
+.live-picker__dot--down { background: var(--color-danger); }

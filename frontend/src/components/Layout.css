@@ -1,0 +1,133 @@
+/* Hallmark · Layout, N5 Floating Pill Nav, Ft5 Statement Footer */
+
+.layout {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  padding: 0;
+}
+
+/* ── N5 Floating Pill Nav ──────────────────────────────────────────────── */
+
+.nav-pill {
+  position: fixed;
+  top: var(--space-4);
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: var(--z-nav);
+
+  display: flex;
+  align-items: center;
+  gap: var(--space-5);
+
+  max-width: 720px;
+  width: calc(100% - 2 * var(--space-4));
+  padding: var(--space-2) var(--space-4);
+
+  background: oklch(18% 0.010 75 / 0.7);
+  backdrop-filter: blur(20px) saturate(180%);
+  -webkit-backdrop-filter: blur(20px) saturate(180%);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-pill);
+  box-shadow: var(--shadow-2);
+}
+
+.nav-pill__brand {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-style: italic;
+  color: var(--color-ink);
+  border-bottom: none;
+  flex-shrink: 0;
+}
+.nav-pill__brand:hover { color: var(--color-accent); }
+
+.nav-pill__dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-accent);
+  box-shadow: 0 0 12px oklch(72% 0.18 75 / 0.6);
+}
+
+.nav-pill__links {
+  list-style: none;
+  display: flex;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  flex: 1;
+  justify-content: center;
+}
+
+.nav-pill__link {
+  font-size: var(--text-sm);
+  color: var(--color-ink-2);
+  padding: var(--space-1) var(--space-3);
+  border-radius: var(--radius-pill);
+  border: none;
+  transition: color var(--dur-base) var(--ease-out), background var(--dur-base) var(--ease-out);
+}
+.nav-pill__link:hover { color: var(--color-ink); background: oklch(94% 0.006 75 / 0.06); }
+.nav-pill__link--active {
+  color: var(--color-accent);
+  background: oklch(72% 0.18 75 / 0.10);
+}
+
+.nav-pill__time {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  flex-shrink: 0;
+  font-variant-numeric: tabular-nums;
+}
+
+@media (max-width: 720px) {
+  .nav-pill { gap: var(--space-3); padding: var(--space-2) var(--space-3); }
+  .nav-pill__brand { font-size: var(--text-base); }
+  .nav-pill__links { gap: 0; }
+  .nav-pill__link { padding: var(--space-1) var(--space-2); font-size: var(--text-xs); }
+  .nav-pill__time { display: none; }
+}
+
+/* ── Main ──────────────────────────────────────────────────────────────── */
+
+.layout__main {
+  flex: 1;
+  width: 100%;
+  max-width: 1400px;
+  margin: 0 auto;
+  padding: calc(64px + var(--space-7)) var(--space-5) var(--space-9);
+}
+
+/* ── Ft5 Statement Footer ──────────────────────────────────────────────── */
+
+.footer-statement {
+  text-align: center;
+  padding: var(--space-7) var(--space-4) var(--space-7);
+  border-top: 1px solid var(--color-rule);
+  margin-top: var(--space-8);
+}
+
+.footer-statement__line {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-style: italic;
+  color: var(--color-ink);
+  margin-bottom: var(--space-3);
+  letter-spacing: -0.01em;
+}
+
+.footer-statement__meta {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+  color: var(--color-muted);
+  flex-wrap: wrap;
+}
+
+.footer-statement__dot { color: var(--color-rule); }

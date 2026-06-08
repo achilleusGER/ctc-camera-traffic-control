@@ -1,0 +1,133 @@
+/* Hallmark · CameraAdmin, F4 Step sequence */
+
+.cadmin { display: flex; flex-direction: column; gap: var(--space-6); }
+.cadmin__header { display: flex; flex-direction: column; gap: var(--space-1); }
+.cadmin__title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-style: italic;
+  margin: 0;
+}
+.cadmin__sub { color: var(--color-muted); font-size: var(--text-sm); }
+.cadmin__section-title {
+  font-family: var(--font-display);
+  font-size: var(--text-lg);
+  font-style: italic;
+  color: var(--color-ink-2);
+  margin: 0 0 var(--space-3);
+}
+
+/* F4 Step sequence */
+.steps {
+  list-style: none;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: var(--space-3);
+  margin: 0;
+  padding: 0;
+}
+.step {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  position: relative;
+}
+.step__num {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-style: italic;
+  color: var(--color-accent);
+  line-height: 1;
+}
+.step__title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-style: italic;
+  color: var(--color-ink);
+  margin: var(--space-1) 0 0;
+}
+.step__hint { font-size: var(--text-xs); color: var(--color-muted); line-height: 1.5; }
+.step__hint code {
+  font-family: var(--font-body);
+  font-weight: 700;
+  font-size: 11px;
+  background: var(--color-paper-3);
+  padding: 1px 4px;
+  border-radius: 2px;
+}
+@media (max-width: 720px) {
+  .steps { grid-template-columns: repeat(2, 1fr); }
+}
+
+/* Form */
+.cadmin__form-section,
+.cadmin__list-section {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+}
+
+.cadmin__form {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-3);
+}
+.cadmin__field { display: flex; flex-direction: column; gap: var(--space-1); }
+.cadmin__field label {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+}
+.cadmin__submit {
+  grid-column: span 2;
+  background: var(--color-accent);
+  color: oklch(14% 0.008 75);
+  border-color: var(--color-accent);
+  font-weight: 600;
+  padding: var(--space-3) var(--space-4);
+  margin-top: var(--space-2);
+}
+.cadmin__submit:hover:not(:disabled) {
+  background: var(--color-accent-2);
+  color: oklch(14% 0.008 75);
+  border-color: var(--color-accent-2);
+}
+@media (max-width: 640px) {
+  .cadmin__form { grid-template-columns: 1fr; }
+  .cadmin__submit { grid-column: span 1; }
+}
+
+/* List */
+.cadmin__list {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+}
+.cadmin__row {
+  display: grid;
+  grid-template-columns: 12px 1fr auto;
+  gap: var(--space-3);
+  align-items: center;
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  background: var(--color-paper-3);
+  transition: background var(--dur-base) var(--ease-out);
+}
+.cadmin__row:hover { background: var(--color-paper-4); }
+.cadmin__dot { width: 8px; height: 8px; border-radius: 50%; justify-self: center; }
+.cadmin__dot--ok   { background: var(--color-ok); }
+.cadmin__dot--down { background: var(--color-danger); }
+.cadmin__row-info { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+.cadmin__row-name { color: var(--color-ink); font-style: italic; }
+.cadmin__row-url  { font-size: var(--text-xs); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; }
+.cadmin__row-meta { font-size: var(--text-xs); color: var(--color-ink-2); }
+.cadmin__toggle { font-size: var(--text-sm); }

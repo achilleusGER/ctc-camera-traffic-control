@@ -1,0 +1,147 @@
+/* Hallmark · globals
+ * Reset + Body + Font-Loading (Instrument Serif + Geist, Google Fonts)
+ * Reduced-Motion respektiert, 8-state Fokus-Ringe
+ */
+
+@import url("https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&family=Geist:wght@300;400;500;600;700&display=swap");
+@import "./tokens.css";
+
+/* ── Reset ─────────────────────────────────────────────────────────────── */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html {
+  font-size: 16px;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  /* Smoother type rendering */
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  /* gate 34: never hidden, clip is fine */
+  overflow-x: clip;
+}
+
+body {
+  font-family: var(--font-body);
+  font-weight: 400;
+  font-size: var(--text-base);
+  line-height: 1.55;
+  min-height: 100vh;
+  background: var(--color-paper);
+  color: var(--color-ink);
+  /* Atmospheric-Background: zwei warme radial blooms (Gate 29 loosened) */
+  background-image:
+    radial-gradient(
+      50% 40% at 18% 12%,
+      oklch(72% 0.18 75 / 0.10) 0%,
+      transparent 70%
+    ),
+    radial-gradient(
+      40% 30% at 88% 88%,
+      oklch(60% 0.20 25 / 0.08) 0%,
+      transparent 75%
+    );
+  background-attachment: fixed;
+}
+
+h1, h2, h3, h4, h5, h6 {
+  font-family: var(--font-display);
+  font-weight: 400;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  color: var(--color-ink);
+  /* Tabular nums für Headlines, die Zahlen enthalten */
+  font-variant-numeric: lining-nums;
+}
+
+p { color: var(--color-ink-2); }
+
+a {
+  color: var(--color-accent);
+  text-decoration: none;
+  border-bottom: 1px solid transparent;
+  transition: border-color var(--dur-base) var(--ease-out);
+}
+a:hover { border-bottom-color: var(--color-accent); }
+
+button {
+  font-family: inherit;
+  font-size: inherit;
+  color: inherit;
+  background: transparent;
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-4);
+  cursor: pointer;
+  transition: all var(--dur-base) var(--ease-out);
+}
+button:hover:not(:disabled) {
+  border-color: var(--color-accent);
+  color: var(--color-accent);
+}
+button:disabled { opacity: 0.4; cursor: not-allowed; }
+button:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+}
+
+input, select, textarea {
+  font-family: inherit;
+  font-size: inherit;
+  color: var(--color-ink);
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-2) var(--space-3);
+  transition: border-color var(--dur-base) var(--ease-out);
+}
+input:focus-visible, select:focus-visible, textarea:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: 2px;
+  border-color: var(--color-accent);
+}
+
+code, pre, .mono {
+  font-family: var(--font-body);
+  font-weight: 700;            /* "Outlier" = Geist 700 statt Mono-Face */
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -0.01em;
+}
+
+img, video, svg { max-width: 100%; display: block; }
+
+/* ── Utility (selten, meist in Komponenten) ────────────────────────────── */
+.tabular { font-variant-numeric: tabular-nums; }
+.muted   { color: var(--color-muted); }
+.ink     { color: var(--color-ink); }
+.ink-2   { color: var(--color-ink-2); }
+.accent  { color: var(--color-accent); }
+
+/* ── Reduced Motion ──────────────────────────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+/* ── Selection ────────────────────────────────────────────────────────── */
+::selection {
+  background: oklch(72% 0.18 75 / 0.35);
+  color: var(--color-ink);
+}
+
+/* ── Scrollbar (subtle) ───────────────────────────────────────────────── */
+::-webkit-scrollbar { width: 10px; height: 10px; }
+::-webkit-scrollbar-track { background: var(--color-paper); }
+::-webkit-scrollbar-thumb {
+  background: var(--color-rule);
+  border-radius: var(--radius-pill);
+}
+::-webkit-scrollbar-thumb:hover { background: var(--color-accent); }

@@ -1,0 +1,138 @@
+/* Hallmark · Calibration, F5 Annotated Screenshot */
+
+.cal { display: flex; flex-direction: column; gap: var(--space-4); }
+.cal__header { display: flex; flex-direction: column; gap: var(--space-1); }
+.cal__title {
+  font-family: var(--font-display);
+  font-size: var(--text-2xl);
+  font-style: italic;
+  margin: 0;
+}
+.cal__sub { color: var(--color-muted); font-size: var(--text-sm); }
+
+.cal__layout {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: var(--space-4);
+}
+@media (max-width: 960px) {
+  .cal__layout { grid-template-columns: 1fr; }
+}
+
+.cal__stage {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+.cal__hint { font-size: var(--text-sm); color: var(--color-muted); }
+
+.cal__img-wrap {
+  position: relative;
+  cursor: crosshair;
+  background: oklch(8% 0.005 75);
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  min-height: 0;
+}
+.cal__img {
+  width: 100%;
+  display: block;
+}
+.cal__overlay {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  pointer-events: none;
+}
+.cal__no-cam {
+  padding: var(--space-7);
+  text-align: center;
+  color: var(--color-muted);
+  font-style: italic;
+}
+
+.cal__panel {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+.cal__panel-title {
+  font-family: var(--font-display);
+  font-size: var(--text-md);
+  font-style: italic;
+  color: var(--color-ink-2);
+  margin: 0;
+}
+
+.cal__points {
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+}
+.cal__point {
+  display: grid;
+  grid-template-columns: 24px 1fr 1fr;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1);
+  border-radius: var(--radius-sm);
+}
+.cal__point-num {
+  font-family: var(--font-display);
+  font-style: italic;
+  color: var(--color-accent);
+  text-align: center;
+}
+.cal__point label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+.cal__point input {
+  width: 80px;
+  font-size: var(--text-sm);
+}
+
+.cal__meters {
+  display: flex;
+  gap: var(--space-2);
+}
+.cal__meters label {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+}
+
+.cal__save {
+  background: var(--color-accent);
+  color: oklch(14% 0.008 75);
+  border-color: var(--color-accent);
+  font-weight: 600;
+  padding: var(--space-3);
+}
+.cal__save:hover:not(:disabled) {
+  background: var(--color-accent-2);
+  color: oklch(14% 0.008 75);
+  border-color: var(--color-accent-2);
+}
+
+.cal__msg { font-size: var(--text-sm); }
+.cal__msg--ok  { color: var(--color-ok); }
+.cal__msg--err { color: var(--color-danger); }
