@@ -123,6 +123,20 @@ done
 command -v pct    >/dev/null || { msg_err "pct nicht gefunden — ist das ein Proxmox-Host?"; exit 1; }
 command -v pveam  >/dev/null || { msg_err "pveam nicht gefunden."; exit 1; }
 
+# ── Template zuerst erkennen (für die Zusammenfassung) ─────────────────
+# Hartcodierte Namen veralten (z. B. 12.2 → 12.7 → 12.12); die Suche ist robust.
+TEMPLATE_NAME=$(
+    pveam available --section system 2>/dev/null \
+        | awk '/debian-12-standard_/ {print $2}' \
+        | sort -V \
+        | tail -1
+)
+if [[ -z "${TEMPLATE_NAME}" ]]; then
+    msg_err "Kein Debian-12-Standard-Template auf pveam verfuegbar."
+    msg_err "Pruefe: pveam update ; pveam available --section system | grep debian-12"
+    exit 1
+fi
+
 msg_step "Zusammenfassung"
 cat <<EOF
   LXC-ID:       ${LXC_ID}
@@ -130,7 +144,7 @@ cat <<EOF
   CPU/RAM/Disk: ${LXC_CORES} Kerne / ${LXC_MEMORY} MB / ${LXC_DISK} GB
   Netz:         ${LXC_IP} via ${LXC_BRIDGE}${LXC_GW:+ (GW ${LXC_GW})}
   Storage:      ${LXC_STORAGE}
-  Template:     ${TEMPLATE_NAME}
+  Template:     ${TEMPLATE_NAME} (wird heruntergeladen falls noetig)
   Remote:       ${REMOTE}@${BRANCH}
   Unattended:   ${UNATTENDED}
   Run-Setup:    ${RUN_SETUP}
@@ -149,23 +163,8 @@ if pct status "${LXC_ID}" &>/dev/null; then
     exit 1
 fi
 
-# ── Template ──────────────────────────────────────────────────────────
+# ── Template sicherstellen ───────────────────────────────────────────
 msg_step "Template sicherstellen"
-# Finde das neueste verfügbare Debian-12-Standard-Template automatisch.
-# Hartcodierte Namen veralten (z. B. 12.2 → 12.7 → 12.12); die Suche ist robust.
-TEMPLATE_NAME=$(
-    pveam available --section system 2>/dev/null \
-        | awk '/debian-12-standard_/ {print $2}' \
-        | sort -V \
-        | tail -1
-)
-if [[ -z "${TEMPLATE_NAME}" ]]; then
-    msg_err "Kein Debian-12-Standard-Template auf pveam verfuegbar."
-    msg_err "Pruefe: pveam update ; pveam available --section system | grep debian-12"
-    exit 1
-fi
-msg_info "Aktuellstes Template: ${TEMPLATE_NAME}"
-
 if ! pveam list "${TEMPLATE_STORAGE}" 2>/dev/null | grep -q "${TEMPLATE_NAME}"; then
     msg_info "Lade Template ${TEMPLATE_NAME} herunter (kann 1-2 Min dauern)..."
     pveam download "${TEMPLATE_STORAGE}" "${TEMPLATE_NAME}" \
