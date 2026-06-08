@@ -309,19 +309,25 @@ if [[ "${do_setup:-0}" -eq 1 ]]; then
 fi
 
 # ── Abschluss ─────────────────────────────────────────────────────────
-LXC_IP_PLAIN="${LXC_IP%/*}"
+# LXC_IP_PLAIN: bei DHCP haben wir oben schon die echte IP ermittelt,
+# bei statischer IP ist es die Konfig ohne /Mask.
+if [[ "${LXC_IP,,}" == "dhcp" ]]; then
+    DISPLAY_IP="${LXC_IP_PLAIN:-<wird-via-DHCP-vergeben>}"
+else
+    DISPLAY_IP="${LXC_IP%/*}"
+fi
 cat <<BANNER
 
 ${GN}============================================${CLR}
-${GN}  LXC ${LXC_ID} (${LXC_IP_PLAIN}) ist startklar.${CLR}
+${GN}  LXC ${LXC_ID} (${DISPLAY_IP}) ist startklar.${CLR}
 ${GN}============================================${CLR}
 
 Naechste Schritte:
 
   pct enter ${LXC_ID}                                # in den LXC wechseln
   cd /opt/trafficcontrol/src
-  cd backend && python3.12 -m venv .venv && .venv/bin/pip install -e . && cd ..
-  cd worker  && python3.12 -m venv .venv && .venv/bin/pip install -e . && cd ..
+  cd backend && python3 -m venv .venv && .venv/bin/pip install -e . && cd ..
+  cd worker  && python3 -m venv .venv && .venv/bin/pip install -e . && cd ..
   cd frontend && npm install && npm run build && cd ..
 
   # .env mit Passwoertern anlegen
@@ -339,6 +345,6 @@ Naechste Schritte:
   sudo systemctl enable --now traffic-worker@1 traffic-worker@2 traffic-worker@3
   sudo systemctl enable --now traffic-cleanup.timer
 
-  # Browser:  http://${LXC_IP_PLAIN}/
+  # Browser:  http://${DISPLAY_IP}/
 
 BANNER

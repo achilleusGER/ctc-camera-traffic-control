@@ -123,18 +123,16 @@ cat <<EOF
 \033[1;32m[setup:OK]\033[0m Erstinstallation abgeschlossen.
 
 Nächste Schritte (als traffic-User):
-  1. Code deployen:
-        cd ${APP_HOME}
-        sudo -u traffic git clone <repo>  src
-        ODER:  rsync -avz <lokaler-pfad>/ src/
+  1. Code deployen (ist schon in /opt/trafficcontrol/src):
+        cd ${APP_HOME}/src
   2. Backend installieren + Migration:
         cd ${APP_HOME}/src/backend
-        python3.12 -m venv .venv
+        python3 -m venv .venv
         .venv/bin/pip install -e .
         .venv/bin/alembic upgrade head
   3. Worker installieren:
         cd ${APP_HOME}/src/worker
-        python3.12 -m venv .venv
+        python3 -m venv .venv
         .venv/bin/pip install -e .
         # YOLO-Modell wird beim ersten Lauf automatisch geladen (~50MB)
   4. Frontend builden:
@@ -142,11 +140,15 @@ Nächste Schritte (als traffic-User):
         npm install
         npm run build
   5. systemd-Services installieren:
-        sudo cp ${APP_HOME}/src/lxc/systemd/*.service /etc/systemd/system/
+        sudo cp ${APP_HOME}/src/lxc/systemd/*.service ${APP_HOME}/src/lxc/systemd/*.timer /etc/systemd/system/
         sudo systemctl daemon-reload
-        sudo systemctl enable --now traffic-backend nginx
+        sudo cp ${APP_HOME}/src/lxc/nginx.conf /etc/nginx/sites-available/trafficcontrol
+        sudo rm -f /etc/nginx/sites-enabled/default
+        sudo ln -s /etc/nginx/sites-available/trafficcontrol /etc/nginx/sites-enabled/
+        sudo systemctl enable --now postgresql redis-server nginx
+        sudo systemctl enable --now traffic-backend
         sudo systemctl enable --now traffic-worker@1   # für Kamera 1
-  6. Im Browser:  http://<lxc-ip>/
+  6. Im Browser:  http://10.10.1.231/    # (deine DHCP-IP, siehe 'ip a')
 
 DB-Credentials:  ${PG_USER} / ${PG_PASS} / ${PG_DB}  (localhost only)
 Backup-Hinweis (Q6):  Proxmox-LXC-Snapshot inkl. /var/lib/trafficcontrol + Postgres-Volumen.

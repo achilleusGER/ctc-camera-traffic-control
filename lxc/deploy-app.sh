@@ -66,4 +66,4 @@ for unit in /etc/systemd/system/traffic-worker@*.service; do
 done
 sudo systemctl reload nginx
 
-LOG "OK. Backend: http://127.0.0.1:7890  ·  Frontend: http://<lxc-ip>/"
+LOG "OK. Backend: http://127.0.0.1:7890  ·  Frontend: http://<lxc-ip-oder-fqdn>/  (pct enter ${LXC_ID:-240}; ip a)"
