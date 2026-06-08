@@ -10,6 +10,14 @@ Verkehrszählung + Geschwindigkeitsmessung auf einem Debian-12-LXC, nativ, ohne 
 bash -c "$(curl -fsSL https://raw.githubusercontent.com/achilleusGER/ctc-camera-traffic-control/main/lxc/proxmox-install.sh)"
 ```
 
+> **Cache-Warnung:** GitHubs CDN cached `raw.githubusercontent.com` 5 Minuten
+> (`Cache-Control: max-age=300`). Wenn du gerade eine neue Skript-Version gepusht
+> hast und die alte Version bekommst: Cache-Buster mit Timestamp anhängen.
+>
+> ```bash
+> bash -c "$(curl -fsSL 'https://raw.githubusercontent.com/achilleusGER/ctc-camera-traffic-control/main/lxc/proxmox-install.sh?'$(date +%s)')"
+> ```
+
 **Standard: DHCP** (LAN-Tool, du brauchst keine feste IP). Mit `--ip CIDR --gw IP` für statische IP:
 
 Alle Optionen: `bash lxc/proxmox-install.sh --help`

@@ -38,7 +38,6 @@ LXC_IP="dhcp"           # Default: DHCP, mit --ip CIDR ueberschreibbar
 LXC_GW=""               # nur bei statischer IP noetig
 LXC_STORAGE="local-lvm"
 TEMPLATE_STORAGE="local"
-TEMPLATE_NAME="debian-12-standard_12.2_1.amd64.tar.zst"
 REMOTE="https://github.com/achilleusGER/ctc-camera-traffic-control.git"
 BRANCH="main"
 UNATTENDED=0
@@ -152,12 +151,27 @@ fi
 
 # ── Template ──────────────────────────────────────────────────────────
 msg_step "Template sicherstellen"
+# Finde das neueste verfügbare Debian-12-Standard-Template automatisch.
+# Hartcodierte Namen veralten (z. B. 12.2 → 12.7 → 12.12); die Suche ist robust.
+TEMPLATE_NAME=$(
+    pveam available --section system 2>/dev/null \
+        | awk '/debian-12-standard_/ {print $2}' \
+        | sort -V \
+        | tail -1
+)
+if [[ -z "${TEMPLATE_NAME}" ]]; then
+    msg_err "Kein Debian-12-Standard-Template auf pveam verfuegbar."
+    msg_err "Pruefe: pveam update ; pveam available --section system | grep debian-12"
+    exit 1
+fi
+msg_info "Aktuellstes Template: ${TEMPLATE_NAME}"
+
 if ! pveam list "${TEMPLATE_STORAGE}" 2>/dev/null | grep -q "${TEMPLATE_NAME}"; then
-    msg_info "Lade Template ${TEMPLATE_NAME} herunter..."
-    pveam update
-    pveam download "${TEMPLATE_STORAGE}" "${TEMPLATE_NAME}"
+    msg_info "Lade Template ${TEMPLATE_NAME} herunter (kann 1-2 Min dauern)..."
+    pveam download "${TEMPLATE_STORAGE}" "${TEMPLATE_NAME}" \
+        || { msg_err "pveam download fehlgeschlagen."; exit 1; }
 else
-    msg_ok "Template bereits vorhanden."
+    msg_ok "Template bereits lokal vorhanden."
 fi
 TEMPLATE_PATH="${TEMPLATE_STORAGE}:vztmpl/${TEMPLATE_NAME}"
 
