@@ -36,7 +36,7 @@ LXC_DISK=64             # GB
 LXC_BRIDGE=vmbr0
 LXC_IP="dhcp"           # Default: DHCP, mit --ip CIDR ueberschreibbar
 LXC_GW=""               # nur bei statischer IP noetig
-LXC_STORAGE="local-lvm"
+LXC_STORAGE=""          # wird automatisch erkannt (local-lvm oder local-zfs)
 TEMPLATE_STORAGE="local"
 REMOTE="https://github.com/achilleusGER/ctc-camera-traffic-control.git"
 BRANCH="main"
@@ -122,6 +122,30 @@ done
 [[ $EUID -eq 0 ]] || { msg_err "Als root auf dem Proxmox-Host ausfuehren."; exit 1; }
 command -v pct    >/dev/null || { msg_err "pct nicht gefunden — ist das ein Proxmox-Host?"; exit 1; }
 command -v pveam  >/dev/null || { msg_err "pveam nicht gefunden."; exit 1; }
+
+# ── Storage automatisch erkennen ──────────────────────────────────────
+# Default-Storage auf Proxmox variiert: 'local-lvm' (LVM-Install) oder
+# 'local-zfs' (ZFS-Install). Wir nehmen den ersten Storage mit Content 'rootdir',
+# der NICHT 'local' (das ist per Default fuer ISO/Template, nicht fuer Disks).
+if [[ -z "${LXC_STORAGE}" ]]; then
+    LXC_STORAGE=$(
+        pvesm status --content rootdir 2>/dev/null \
+            | awk 'NR>1 && $1 != "local" && $1 != "local (pmxcfs)" {print $1; exit}'
+    )
+    if [[ -z "${LXC_STORAGE}" ]]; then
+        # Fallback: erstes Storage mit 'rootdir' oder 'images' Content
+        LXC_STORAGE=$(
+            pvesm status 2>/dev/null \
+                | awk 'NR>1 && ($2 ~ /rootdir|images/) {print $1; exit}'
+        )
+    fi
+    if [[ -z "${LXC_STORAGE}" ]]; then
+        msg_err "Konnte keinen Root-Storage finden."
+        msg_err "Pruefe: pvesm status ; manuelles --storage <name> setzen"
+        exit 1
+    fi
+fi
+msg_info "Verwende Root-Storage: ${LXC_STORAGE}"
 
 # ── Template zuerst erkennen (für die Zusammenfassung) ─────────────────
 # Hartcodierte Namen veralten (z. B. 12.2 → 12.7 → 12.12); die Suche ist robust.
