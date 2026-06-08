@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.venv/
+venv/
+env/
+*.egg
+
+# Node
+node_modules/
+.npm
+.eslintcache
+.vite/
+*.tsbuildinfo
+
+# Env / Secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# IDE
+.idea/
+.vscode/
+*.swp
+.DS_Store
+
+# Logs
+*.log
+logs/
+
+# Media / Models (large binaries)
+media/
+*.pt
+*.onnx
+!yolo11*.pt.placeholder

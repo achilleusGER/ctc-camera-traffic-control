@@ -1,0 +1,38 @@
+[project]
+name = "trafficcontrol-worker"
+version = "0.1.0"
+description = "Hermes-Trafficcontrol Worker (YOLO + supervision + RTSPS)"
+requires-python = ">=3.12"
+readme = "README.md"
+dependencies = [
+    "ultralytics>=8.3.0",         # yolo11m/s, downloaded on first run
+    "supervision>=0.24.0",         # ByteTrack, LineZone, ViewTransformer
+    "opencv-python-headless>=4.10.0",
+    "numpy>=2.1.0",
+    "Pillow>=11.0.0",
+    "pydantic>=2.10.0",
+    "pydantic-settings>=2.6.0",
+    "httpx>=0.28.0",
+    "redis>=5.2.0",
+    "python-dotenv>=1.0.0",
+    # PaddleOCR (optional, default aus; in Phase 1 nur vorbereitet)
+    "paddlepaddle>=2.6.0 ; sys_platform == 'linux'",
+    "paddleocr>=2.8.0 ; sys_platform == 'linux'",
+    "av>=12.0.0",                  # alternativer RTSP-Reader, schneller als OpenCV
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.3.0",
+    "ruff>=0.7.0",
+]
+
+[project.scripts]
+traffic-worker = "worker.main:main"
+
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools.packages.find]
+include = ["worker*"]
