@@ -1,112 +1,116 @@
 # Hermes-Trafficcontrol — Proxmox-LXC Deployment
 
-Vollständige Anleitung, um die App auf einem **frischen Debian-12-LXC** auf Proxmox
-laufen zu lassen — nativ, ohne Docker im LXC.
+Verkehrszählung + Geschwindigkeitsmessung auf einem Debian-12-LXC, nativ, ohne Docker.
 
-## Architektur im LXC
+## Schnellstart (Proxmox-Host)
 
-| Service       | Port    | Speicherort                              |
-|---------------|---------|------------------------------------------|
-| postgresql    | 5432    | /var/lib/postgresql/15/main/             |
-| redis         | 6379    | systemd-managed                          |
-| traffic-backend (uvicorn) | 7890 (nur 127.0.0.1) | /opt/trafficcontrol/src/backend |
-| traffic-worker@N (1 pro Kamera) | — | /opt/trafficcontrol/src/worker |
-| nginx         | 80      | /opt/trafficcontrol/src/frontend/dist/   |
-| media         | —       | /var/lib/trafficcontrol/media/           |
-
-## 1) LXC auf Proxmox-Host erstellen
-
-Auf dem Proxmox-Host (NICHT im LXC):
+**Ein Befehl auf dem Proxmox-Host als root** — das Skript macht alles (LXC erstellen, Repo klonen, optional Setup):
 
 ```bash
-pveam update
-pveam download local debian-12-standard_12.2_1.amd64.tar.zst
-
-pct create 240 local:vztmpl/debian-12-standard_12.2_1.amd64.tar.zst \
-  --hostname hermes-trafficcontrol \
-  --cores 12 --memory 12288 --swap 2048 \
-  --rootfs local-lvm:64 \
-  --net0 name=eth0,bridge=vmbr0,ip=10.10.1.250/24,gw=10.10.1.1 \
-  --features nesting=1 \
-  --onboot 1 --unprivileged 1 --ostype debian
-
-pct start 240
-pct enter 240
+bash -c "$(curl -fsSL https://raw.githubusercontent.com/achilleusGER/ctc-camera-traffic-control/main/lxc/proxmox-install.sh)"
 ```
 
-> CPU/RAM bewusst großzügig, weil yolo11m auf 2-3 Streams ca. 2,5 Kerne + 1,5 GB pro Worker
-> braucht. Bei 4 Kameras: 10 Kerne + 6 GB Worker + 2 GB Backend + 2 GB Postgres + 512 MB
-> Redis + 1 GB nginx/system = ~16 GB. Host hat 16/14 — passt knapp.
-
-## 2) Erstinstallation (einmalig)
-
-Im LXC als root:
+Mit eigenen Werten:
 
 ```bash
-cd /tmp
-# Repo clonen (einmalig, danach liegen Code + Skripte lokal)
-git clone https://github.com/achilleusGER/ctc-camera-traffic-control.git /opt/trafficcontrol/src
+bash lxc/proxmox-install.sh --id 240 --ip 10.10.1.250/24 --unattended --run-setup
+```
 
-# Praxistipp: in der Entwicklung oft rsync vom Mac (ssh-Key vorausgesetzt):
-# rsync -avz --exclude='.venv' --exclude='node_modules' --exclude='.git' \
-#     /Users/andreaskutter/Programmierung/Hermes-Trafficcontrol/ \
-#     traffic@10.10.1.250:/opt/trafficcontrol/src/
+Alle Optionen: `bash lxc/proxmox-install.sh --help`
 
+Das Skript macht:
+
+1. Prüft root + Proxmox-Umgebung
+2. Lädt `debian-12-standard_12.2_1.amd64.tar.zst` falls nicht vorhanden
+3. `pct create` + `pct start` (LXC 240, 12 Kerne, 12 GB RAM, 64 GB Disk)
+4. Wartet auf Netzwerk
+5. Klont `ctc-camera-traffic-control` nach `/opt/trafficcontrol/src`
+6. Fragt: `setup.sh` jetzt ausführen? (bei `--run-setup` ohne Rückfrage)
+
+## Was ist wo
+
+| Datei | Zweck | Aufruf |
+|-------|-------|--------|
+| `lxc/proxmox-install.sh` | LXC anlegen + Repo klonen | **Proxmox-Host**, root |
+| `lxc/setup.sh` | Debian-Pakete, Postgres+Redis, DB-User, UFW, Hardening | **im LXC**, root |
+| `lxc/deploy-app.sh` | Updates deployen (git pull, pip, npm, alembic, restart) | **im LXC**, traffic-User |
+| `lxc/systemd/*.service` + `*.timer` | Backend, Worker (Template), Cleanup | kopieren nach `/etc/systemd/system/` |
+| `lxc/nginx.conf` | HTTP-only Reverse-Proxy + Frontend-Static | `/etc/nginx/sites-available/` |
+| `lxc/.env.production` | Settings-Template (Passwörter ändern!) | `/opt/trafficcontrol/.env` |
+
+## Volle Anleitung
+
+### 1) Installer-Skript (Proxmox-Host)
+
+Wie oben — ein Befehl, läuft interaktiv durch.
+
+Wenn du ohne SSH-Key arbeitest, generiere vorher einen:
+
+```bash
+ssh-keygen -t ed25519 -N "" -f ~/.ssh/id_ed25519
+# auf den Proxmox-Host kopieren (falls du remote arbeitest):
+ssh-copy-id root@<proxmox-host>
+```
+
+### 2) Erstinstallation (im LXC)
+
+Falls du beim Installer `--run-setup` nicht angegeben hast, manuell:
+
+```bash
+pct enter 240
 cd /opt/trafficcontrol/src/lxc
 bash setup.sh
 ```
 
-`setup.sh` macht:
-- apt install (PostgreSQL 15, Redis, Python 3.12, FFmpeg, nginx, UFW)
-- DB-User `traffic` / DB `traffic` anlegen (Passwort: `traffic` — **vor Produktion ändern!**)
+`setup.sh` installiert:
+- PostgreSQL 15, Redis, Python 3.12, FFmpeg, nginx, UFW
+- DB-User `traffic` / DB `traffic` (Passwort: `traffic` — **vor Produktion ändern!**)
 - `traffic`-App-User + Verzeichnisse
-- UFW: nur SSH + HTTP offen
-- Postgres + Redis nur auf 127.0.0.1 gebunden
+- UFW: nur SSH + 80
+- Postgres + Redis nur auf 127.0.0.1
 
-## 3) Code deployen (App-User)
+### 3) App-Code vorbereiten (im LXC, als traffic-User)
 
 ```bash
 sudo -u traffic -i
 cd /opt/trafficcontrol/src
 
-# Backend venv + Migration
+# Backend
 cd backend
 python3.12 -m venv .venv
 .venv/bin/pip install -e .
 .venv/bin/alembic upgrade head
 
-# Worker venv
+# Worker
 cd ../worker
 python3.12 -m venv .venv
 .venv/bin/pip install -e .
-# YOLO11m wird beim ersten Lauf automatisch geladen (~50 MB, dauert 1-2 Min)
+# YOLO11m wird beim ersten Lauf automatisch geladen (~50 MB, 1-2 Min)
 
-# Frontend build
+# Frontend
 cd ../frontend
 npm install
 npm run build
 ```
 
-## 4) systemd-Services installieren
+### 4) systemd + nginx (im LXC, als root)
 
 ```bash
-# .env mit Produktions-Passwörtern anlegen
+# .env mit Passwörtern
 sudo cp lxc/.env.production /opt/trafficcontrol/.env
-sudo nano /opt/trafficcontrol/.env   # ← Passwörter ändern
+sudo nano /opt/trafficcontrol/.env   # Passwörter ändern!
 
-# Services kopieren
-sudo cp lxc/systemd/*.service /etc/systemd/system/
-sudo cp lxc/systemd/*.timer   /etc/systemd/system/
+# Services
+sudo cp lxc/systemd/*.service lxc/systemd/*.timer /etc/systemd/system/
 sudo systemctl daemon-reload
 
-# nginx-Konfiguration
+# nginx
 sudo cp lxc/nginx.conf /etc/nginx/sites-available/trafficcontrol
 sudo rm -f /etc/nginx/sites-enabled/default
 sudo ln -s /etc/nginx/sites-available/trafficcontrol /etc/nginx/sites-enabled/
 sudo nginx -t
-sudo systemctl reload nginx
 
-# Backend + Worker starten
+# Starten
 sudo systemctl enable --now postgresql redis-server nginx
 sudo systemctl enable --now traffic-backend
 sudo systemctl enable --now traffic-worker@1   # für Kamera 1
@@ -114,85 +118,64 @@ sudo systemctl enable --now traffic-worker@2   # für Kamera 2
 sudo systemctl enable --now traffic-cleanup.timer   # Phase 6 Retention
 ```
 
-## 5) App-User-Login + Kameras anlegen
+### 5) App-Login (Browser)
 
-Browser: `http://10.10.1.250/`
+→ `http://<lxc-ip>/` (Default: 10.10.1.250)
 
 - **Kameras** → "Neue Kamera" → RTSPS-URL + Tempolimit eintragen
 - **Live** → prüfen, ob Stream ankommt
-- **Kalibrierung** → pro Kamera: 4 Punkte auf einer realen Rechteckfläche markieren,
-  Breite/Höhe in Metern eintragen
-- **Kameras** → pro Kamera: Zähllinie(n) zeichnen (kommt mit Phase 5, derzeit Backend-
-  Endpoint vorhanden, UI folgt)
+- **Kalibrierung** → pro Kamera: 4 Punkte auf einer realen Rechteckfläche markieren, Breite/Höhe in Metern
 - **Verstöße** → sobald Daten reinkommen
 
-## 6) Updates deployen
+### 6) Updates deployen
 
-Wenn du Code änderst und re-deployen willst (auf deinem Mac entwickeln, im LXC testen):
+Code auf deinem Mac ändern, committen, pushen. Dann im LXC:
 
 ```bash
-# Auf dem Mac:
-git add -A && git commit -m "..." && git push
-
-# Im LXC:
 sudo -u traffic -i
 cd /opt/trafficcontrol/src
 bash lxc/deploy-app.sh
 ```
 
 `deploy-app.sh` macht:
-- `git pull`
+- `git pull --rebase`
 - Backend + Worker: `pip install -e .`
 - Frontend: `npm run build`
 - `alembic upgrade head`
-- systemd restart
+- `systemctl restart` für Backend + Worker
 
-## 7) Backups (Q6 — via Proxmox, NICHT via App-Skript)
+## Backup (via Proxmox-Snapshot)
 
-Proxmox erstellt LXC-Snapshots konsistent, wenn du vorher im LXC die
-DB-Connections stoppst oder einen Snapshot-Mode nutzt. Einfachster Weg:
+Q6-Entscheidung: **kein** Backup-Skript im Repo. Du machst Backups via Proxmox-LXC-Snapshot.
 
 ```bash
 # Auf Proxmox-Host:
-pct snapshot 240 pre-upgrade-$(date +%Y%m%d)  # Schnappschuss vor Update
+pct snapshot 240 pre-upgrade-$(date +%Y%m%d)
 # Oder via Web-UI: LXC 240 → Snapshot → "pre-upgrade-2026-06-08"
 ```
 
-Wichtig für die Wiederherstellung: `/var/lib/trafficcontrol/media/` + Postgres-Daten
-sind die einzigen persistenten Daten. Beide liegen im LXC-RootFS und werden vom
-Snapshot erfasst.
+Wichtig für die Wiederherstellung: `/var/lib/trafficcontrol/media/` + Postgres-Daten sind die einzigen persistenten Daten. Beide liegen im LXC-RootFS und werden vom Snapshot erfasst.
 
-Optional, falls du Postgres atomar sichern willst (außerhalb des Snapshots):
-
-```bash
-# Im LXC:
-pg_dump -U traffic traffic | gzip > /tmp/traffic-$(date +%F).sql.gz
-# Auf den Host kopieren:
-pct pull 240 /tmp/traffic-*.sql.gz /backup/
-```
-
-## 8) Troubleshooting
+## Troubleshooting
 
 | Problem | Check |
 |---------|-------|
+| LXC erstellt, aber SSH klappt nicht | `pct enter 240` direkt (kein SSH nötig im LXC) |
 | Backend startet nicht | `sudo journalctl -u traffic-backend -n 50` |
 | Worker connect nicht zum Stream | `journalctl -u traffic-worker@1 -n 30` + RTSPS-URL testen mit `ffplay rtsps://...` |
 | Frontend zeigt 502 | `systemctl status traffic-backend` + `journalctl -u traffic-backend` |
-| DB-Verbindung failt | `psql -U traffic -h 127.0.0.1 traffic` (Passwort = `traffic` oder neuer Wert aus .env) |
+| DB-Verbindung failt | `psql -U traffic -h 127.0.0.1 traffic` (Passwort aus .env) |
 | Redis nicht erreichbar | `redis-cli ping` muss `PONG` antworten |
 | Kamera wird nicht erkannt | RTSPS-URL mit `ffplay` testen, dann in `/cameras/`-API prüfen |
-| YOLO-Inferenz zu langsam | `model_variant` pro Kamera auf `s` setzen (YAML im Backend, dann `alembic` migration) |
+| YOLO-Inferenz zu langsam | `model_variant` pro Kamera auf `s` setzen |
 
-## 9) Sicherheit (Q5: HTTP-only, LAN)
+## Sicherheit (Q5: HTTP-only, LAN)
 
-- Backend lauscht nur auf 127.0.0.1:7890 (nicht öffentlich erreichbar)
+- Backend lauscht nur auf 127.0.0.1:7890
 - Postgres + Redis nur auf 127.0.0.1
-- nginx als Reverse-Proxy
+- nginx als Reverse-Proxy (HTTP, nicht HTTPS — LAN-Tool)
 - UFW: nur SSH (22) + HTTP (80)
-- Kein Login (LAN-Tool, Andreas allein — laut Hallmark-Brief)
-- Beweisfotos + ALPR: ALPR standardmäßig aus, Retention via cleanup-timer (Phase 6)
+- Kein Login (LAN-Tool, Andreas allein)
+- Beweisfotos + ALPR: ALPR standardmäßig aus, Retention via cleanup-timer
 
-Falls du das Tool irgendwann aus dem LAN exponieren willst:
-- HTTPS mit Let's Encrypt (certbot)
-- Reverse-Auth (z. B. Authelia) davorschalten
-- Dann: `/admin/cleanup-evidence` per Auth schützen
+Bei Bedarf später HTTPS: `certbot --nginx` auf der Proxmox-Host-IP.
