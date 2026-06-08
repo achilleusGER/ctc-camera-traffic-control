@@ -81,13 +81,13 @@ cd /opt/trafficcontrol/src
 
 # Backend
 cd backend
-python3.12 -m venv .venv
+python3 -m venv .venv
 .venv/bin/pip install -e .
 .venv/bin/alembic upgrade head
 
 # Worker
 cd ../worker
-python3.12 -m venv .venv
+python3 -m venv .venv
 .venv/bin/pip install -e .
 # YOLO11m wird beim ersten Lauf automatisch geladen (~50 MB, 1-2 Min)
 

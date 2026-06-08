@@ -19,14 +19,20 @@ die() { printf '\033[1;31m[setup:FATAL]\033[0m %s\n' "$*" >&2; exit 1; }
 log "Installiere Debian-Pakete (PostgreSQL 15, Redis, Python, FFmpeg, nginx)…"
 apt-get update
 apt-get install -y --no-install-recommends \
-    python3.12 python3.12-venv python3-pip \
-    python3-dev build-essential libpq-dev \
+    python3 python3-venv python3-pip python3-dev \
+    build-essential libpq-dev \
     postgresql-15 postgresql-client-15 \
     redis-server \
     nginx \
     ffmpeg \
-    git curl ca-certificates \
+    git curl ca-certificates openssl \
     sudo ufw
+
+# Hinweis: Auf aktuellen Debian-12 ist 'python3' = 3.11. Das ist OK — das
+# Backend/Worker laufen unter 3.11+ problemlos. Falls du explizit 3.12 willst,
+# kannst du nach der Installation 'pyenv' nachziehen.
+PYTHON_VERSION=$(python3 --version | awk '{print $2}')
+log "Python-Version: ${PYTHON_VERSION}"
 
 # ─── 2) PostgreSQL: User + DB ─────────────────────────────────────────────
 log "Konfiguriere PostgreSQL…"

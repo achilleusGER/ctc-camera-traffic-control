@@ -30,17 +30,17 @@ else
     LOG "Kein .git — überspringe pull."
 fi
 
-# 2) Backend
-LOG "Backend: pip install…"
+# 2) Backend venv + Migration
+log "Backend: pip install…"
 cd "${SRC}/backend"
-[[ -d .venv ]] || python3.12 -m venv .venv
+[[ -d .venv ]] || python3 -m venv .venv
 .venv/bin/pip install --quiet --upgrade pip
 .venv/bin/pip install --quiet -e .
 
-# 3) Worker
-LOG "Worker: pip install…"
+# 3) Worker venv
+log "Worker: pip install…"
 cd "${SRC}/worker"
-[[ -d .venv ]] || python3.12 -m venv .venv
+[[ -d .venv ]] || python3 -m venv .venv
 .venv/bin/pip install --quiet --upgrade pip
 .venv/bin/pip install --quiet -e .
 
