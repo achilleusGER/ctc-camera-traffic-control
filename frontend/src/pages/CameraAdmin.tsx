@@ -23,12 +23,30 @@ export function CameraAdmin() {
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.cameras }),
   });
 
+  const deleteCam = useMutation({
+    mutationFn: (id: number) => api.delete(`/cameras/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.cameras }),
+  });
+
+  const createStreet = useMutation({
+    mutationFn: (payload: { name: string; description?: string }) =>
+      api.post("/streets/", payload).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.streets }),
+  });
+
+  const deleteStreet = useMutation({
+    mutationFn: (id: number) => api.delete(`/streets/${id}`),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.streets }),
+  });
+
   const [form, setForm] = useState({
     name: "",
     rtsp_url_low: "",
     street_id: "" as string | number,
     default_speed_limit_kmh: 50,
   });
+
+  const [streetForm, setStreetForm] = useState({ name: "", description: "" });
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,6 +58,16 @@ export function CameraAdmin() {
       default_speed_limit_kmh: form.default_speed_limit_kmh,
     });
     setForm({ name: "", rtsp_url_low: "", street_id: "", default_speed_limit_kmh: 50 });
+  };
+
+  const onStreetSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!streetForm.name.trim()) return;
+    createStreet.mutate({
+      name: streetForm.name.trim(),
+      description: streetForm.description.trim() || undefined,
+    });
+    setStreetForm({ name: "", description: "" });
   };
 
   return (
@@ -153,8 +181,87 @@ export function CameraAdmin() {
               >
                 {c.enabled ? "Deaktivieren" : "Aktivieren"}
               </button>
+              <button
+                className="cadmin__toggle cadmin__toggle--danger"
+                onClick={() => {
+                  if (confirm(`Kamera "${c.name}" wirklich löschen?`)) {
+                    deleteCam.mutate(c.id);
+                  }
+                }}
+              >
+                Löschen
+              </button>
             </li>
           ))}
+        </ul>
+      </section>
+
+      <section className="cadmin__form-section">
+        <h2 className="cadmin__section-title">Neue Straße</h2>
+        <form onSubmit={onStreetSubmit} className="cadmin__form">
+          <div className="cadmin__field">
+            <label htmlFor="street-name">Name</label>
+            <input
+              id="street-name"
+              type="text"
+              value={streetForm.name}
+              onChange={(e) => setStreetForm({ ...streetForm, name: e.target.value })}
+              placeholder="z. B. Bahnhofstraße"
+              required
+            />
+          </div>
+          <div className="cadmin__field">
+            <label htmlFor="street-desc">Beschreibung (optional)</label>
+            <input
+              id="street-desc"
+              type="text"
+              value={streetForm.description}
+              onChange={(e) => setStreetForm({ ...streetForm, description: e.target.value })}
+              placeholder="z. B. Abschnitt 12–18, beide Richtungen"
+            />
+          </div>
+          <button type="submit" className="cadmin__submit" disabled={createStreet.isPending}>
+            {createStreet.isPending ? "Speichere…" : "Straße anlegen"}
+          </button>
+        </form>
+      </section>
+
+      <section className="cadmin__list-section">
+        <h2 className="cadmin__section-title">Vorhandene Straßen</h2>
+        {streetsQ.data?.length === 0 && <p className="muted">Noch keine Straßen angelegt.</p>}
+        <ul className="cadmin__list">
+          {streetsQ.data?.map((s) => {
+            const camCount = camerasQ.data?.filter((c) => c.street_id === s.id).length ?? 0;
+            return (
+              <li key={s.id} className="cadmin__row">
+                <span className="cadmin__dot cadmin__dot--ok" />
+                <div className="cadmin__row-info">
+                  <span className="cadmin__row-name">{s.name}</span>
+                  {s.description && <span className="cadmin__row-meta">{s.description}</span>}
+                  <span className="cadmin__row-meta">
+                    {camCount} {camCount === 1 ? "Kamera" : "Kameras"}
+                  </span>
+                </div>
+                <button
+                  className="cadmin__toggle cadmin__toggle--danger"
+                  onClick={() => {
+                    if (camCount > 0) {
+                      alert(
+                        `Straße "${s.name}" hat noch ${camCount} Kamera(s). ` +
+                        `Bitte erst Kameras löschen oder Straße wechseln.`,
+                      );
+                      return;
+                    }
+                    if (confirm(`Straße "${s.name}" wirklich löschen?`)) {
+                      deleteStreet.mutate(s.id);
+                    }
+                  }}
+                >
+                  Löschen
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </section>
     </div>
