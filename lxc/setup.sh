@@ -13,6 +13,24 @@ export DEBIAN_FRONTEND=noninteractive
 log() { printf '\033[1;33m[setup]\033[0m %s\n' "$*"; }
 die() { printf '\033[1;31m[setup:FATAL]\033[0m %s\n' "$*" >&2; exit 1; }
 
+# ─── 0) DNS-Fallback fuer unprivilegierte LXC ─────────────────────────
+# Proxmox mounted /etc/resolv.conf oft read-only vom Host. Wenn der
+# Host keine DNS-Server hat (oder leere Datei), schlaegt 'apt update' fehl.
+# Loesung: eigene resolv.conf anlegen (nur wenn noetig).
+if ! getent hosts deb.debian.org &>/dev/null; then
+    log "DNS fehlt, lege eigene /etc/resolv.conf an (8.8.8.8 + 1.1.1.1)"
+    rm -f /etc/resolv.conf
+    printf 'nameserver 8.8.8.8\nnameserver 1.1.1.1\n' > /etc/resolv.conf
+fi
+
+# ─── 0.1) Git safe.directory fuer das geklonte Repo ─────────────────
+# Proxmox-Installer klont das Repo als root mit 'pct exec', aber 'git'
+# meckert ueber 'dubious ownership' wenn man als anderer User (oder
+# spaeter auch als root) arbeitet. Einmal global freigeben, danach
+# funktioniert 'git pull' ohne manuellen Eingriff.
+# Bewusst KEIN '*' — das wuerde alle Repos vertrauen (Sicherheitsluecke).
+git config --global --add safe.directory /opt/trafficcontrol/src || true
+
 [[ $EUID -eq 0 ]] || die "Bitte als root ausführen."
 
 # ─── 1) Debian-Pakete ──────────────────────────────────────────────────────
