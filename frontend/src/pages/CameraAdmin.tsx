@@ -54,6 +54,11 @@ export function CameraAdmin() {
 
   const [streetForm, setStreetForm] = useState({ name: "", description: "" });
 
+  // Aktiver Tab: 'cameras' (default) oder 'streets'. Kameras ist der
+  // haeufigere Use-Case, deshalb zuerst. Tabs persistieren nicht
+  // (kein localStorage) — nach Reload ist immer Kameras aktiv.
+  const [tab, setTab] = useState<"cameras" | "streets">("cameras");
+
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.name || !form.rtsp_url_low) return;
@@ -79,12 +84,33 @@ export function CameraAdmin() {
   return (
     <div className="cadmin">
       <header className="cadmin__header">
-        <h1 className="cadmin__title">Kameras</h1>
+        <h1 className="cadmin__title">Verwaltung</h1>
         <p className="cadmin__sub">
           {formatNumber(camerasQ.data?.length ?? 0)} Kameras · {formatNumber(streetsQ.data?.length ?? 0)} Straßen
         </p>
       </header>
 
+      <nav className="cadmin__tabs" role="tablist" aria-label="Verwaltung-Bereiche">
+        <button
+          role="tab"
+          aria-selected={tab === "cameras"}
+          className={`cadmin__tab${tab === "cameras" ? " cadmin__tab--active" : ""}`}
+          onClick={() => setTab("cameras")}
+        >
+          Kameras
+        </button>
+        <button
+          role="tab"
+          aria-selected={tab === "streets"}
+          className={`cadmin__tab${tab === "streets" ? " cadmin__tab--active" : ""}`}
+          onClick={() => setTab("streets")}
+        >
+          Straßen
+        </button>
+      </nav>
+
+      {tab === "cameras" ? (
+        <>
       <ol className="steps">
         <li className="step">
           <span className="step__num">01</span>
@@ -181,34 +207,38 @@ export function CameraAdmin() {
                   {c.alpr_enabled && <> · ALPR an</>}
                 </span>
               </div>
-              <button
-                className="cadmin__toggle"
-                onClick={() => toggleCam.mutate({ id: c.id, enabled: !c.enabled })}
-              >
-                {c.enabled ? "Deaktivieren" : "Aktivieren"}
-              </button>
-              <button
-                className={`cadmin__toggle${c.alpr_enabled ? " cadmin__toggle--alpr-on" : ""}`}
-                onClick={() => toggleAlpr.mutate({ id: c.id, alpr_enabled: !c.alpr_enabled })}
-                title="Kfz-Kennzeichen-Erkennung (DSGVO: nur mit Einwilligung aktivieren)"
-              >
-                {c.alpr_enabled ? "ALPR an" : "ALPR aus"}
-              </button>
-              <button
-                className="cadmin__toggle cadmin__toggle--danger"
-                onClick={() => {
-                  if (confirm(`Kamera "${c.name}" wirklich löschen?`)) {
-                    deleteCam.mutate(c.id);
-                  }
-                }}
-              >
-                Löschen
-              </button>
+              <div className="cadmin__row-actions">
+                <button
+                  className="cadmin__toggle"
+                  onClick={() => toggleCam.mutate({ id: c.id, enabled: !c.enabled })}
+                >
+                  {c.enabled ? "Deaktivieren" : "Aktivieren"}
+                </button>
+                <button
+                  className={`cadmin__toggle${c.alpr_enabled ? " cadmin__toggle--alpr-on" : ""}`}
+                  onClick={() => toggleAlpr.mutate({ id: c.id, alpr_enabled: !c.alpr_enabled })}
+                  title="Kfz-Kennzeichen-Erkennung (DSGVO: nur mit Einwilligung aktivieren)"
+                >
+                  {c.alpr_enabled ? "ALPR an" : "ALPR aus"}
+                </button>
+                <button
+                  className="cadmin__toggle cadmin__toggle--danger"
+                  onClick={() => {
+                    if (confirm(`Kamera "${c.name}" wirklich löschen?`)) {
+                      deleteCam.mutate(c.id);
+                    }
+                  }}
+                >
+                  Löschen
+                </button>
+              </div>
             </li>
           ))}
         </ul>
       </section>
-
+        </>
+      ) : (
+        <>
       <section className="cadmin__form-section">
         <h2 className="cadmin__section-title">Neue Straße</h2>
         <form onSubmit={onStreetSubmit} className="cadmin__form">
@@ -277,6 +307,8 @@ export function CameraAdmin() {
           })}
         </ul>
       </section>
+        </>
+      )}
     </div>
   );
 }
