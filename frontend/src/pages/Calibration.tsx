@@ -26,7 +26,14 @@ export function Calibration() {
 
   useEffect(() => {
     if (calQ.data) {
-      setPoints(calQ.data.source_points);
+      // Backend liefert source_points als [number, number][],
+      // lokaler State erwartet Point[] mit x/y-Feldern.
+      setPoints(
+        calQ.data.source_points.map(([x, y]) => ({
+          x: Math.round(x),
+          y: Math.round(y),
+        })),
+      );
       setWidth(calQ.data.target_width_m);
       setHeight(calQ.data.target_height_m);
     }
