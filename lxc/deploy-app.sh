@@ -31,14 +31,14 @@ else
 fi
 
 # 2) Backend venv + Migration
-log "Backend: pip install…"
+LOG "Backend: pip install…"
 cd "${SRC}/backend"
 [[ -d .venv ]] || python3 -m venv .venv
 .venv/bin/pip install --quiet --upgrade pip
 .venv/bin/pip install --quiet -e .
 
 # 3) Worker venv
-log "Worker: pip install…"
+LOG "Worker: pip install…"
 cd "${SRC}/worker"
 [[ -d .venv ]] || python3 -m venv .venv
 .venv/bin/pip install --quiet --upgrade pip
