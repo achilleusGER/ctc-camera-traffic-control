@@ -23,6 +23,12 @@ export function CameraAdmin() {
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.cameras }),
   });
 
+  const toggleAlpr = useMutation({
+    mutationFn: ({ id, alpr_enabled }: { id: number; alpr_enabled: boolean }) =>
+      api.patch(`/cameras/${id}`, { alpr_enabled }).then((r) => r.data),
+    onSuccess: () => qc.invalidateQueries({ queryKey: QK.cameras }),
+  });
+
   const deleteCam = useMutation({
     mutationFn: (id: number) => api.delete(`/cameras/${id}`),
     onSuccess: () => qc.invalidateQueries({ queryKey: QK.cameras }),
@@ -180,6 +186,13 @@ export function CameraAdmin() {
                 onClick={() => toggleCam.mutate({ id: c.id, enabled: !c.enabled })}
               >
                 {c.enabled ? "Deaktivieren" : "Aktivieren"}
+              </button>
+              <button
+                className={`cadmin__toggle${c.alpr_enabled ? " cadmin__toggle--alpr-on" : ""}`}
+                onClick={() => toggleAlpr.mutate({ id: c.id, alpr_enabled: !c.alpr_enabled })}
+                title="Kfz-Kennzeichen-Erkennung (DSGVO: nur mit Einwilligung aktivieren)"
+              >
+                {c.alpr_enabled ? "ALPR an" : "ALPR aus"}
               </button>
               <button
                 className="cadmin__toggle cadmin__toggle--danger"

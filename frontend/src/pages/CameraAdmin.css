@@ -131,3 +131,16 @@
 .cadmin__row-url  { font-size: var(--text-xs); color: var(--color-muted); overflow: hidden; text-overflow: ellipsis; }
 .cadmin__row-meta { font-size: var(--text-xs); color: var(--color-ink-2); }
 .cadmin__toggle { font-size: var(--text-sm); }
+.cadmin__toggle--danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+.cadmin__toggle--danger:hover {
+  background: var(--color-danger);
+  color: oklch(98% 0 0);
+}
+.cadmin__toggle--alpr-on {
+  color: oklch(72% 0.18 75);
+  border-color: oklch(72% 0.18 75);
+  font-weight: 600;
+}
