@@ -10,6 +10,35 @@
 }
 .cal__sub { color: var(--color-muted); font-size: var(--text-sm); }
 
+/* ─── Mode-Switch (Linie ↔ Perspektive) ─────────────────────────────── */
+
+.cal__mode {
+  display: flex;
+  gap: var(--space-2);
+  flex-wrap: wrap;
+  align-items: center;
+}
+.cal__mode-btn {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  color: var(--color-ink-2);
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-sm);
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: background 0.15s, border-color 0.15s;
+}
+.cal__mode-btn:hover { background: var(--color-paper-3, var(--color-paper-2)); }
+.cal__mode-btn--active {
+  background: oklch(72% 0.18 75);
+  border-color: oklch(72% 0.18 75);
+  color: oklch(14% 0.008 75);
+  font-weight: 600;
+}
+
+/* ─── Layout (Stage links, Panel rechts) ────────────────────────────── */
+
 .cal__layout {
   display: grid;
   grid-template-columns: 1fr 320px;
@@ -28,7 +57,7 @@
   flex-direction: column;
   gap: var(--space-2);
 }
-.cal__hint { font-size: var(--text-sm); color: var(--color-muted); }
+.cal__hint { font-size: var(--text-sm); color: var(--color-muted); margin: 0; }
 
 .cal__img-wrap {
   position: relative;
@@ -56,6 +85,8 @@
   font-style: italic;
 }
 
+/* ─── Panel (rechts) ────────────────────────────────────────────────── */
+
 .cal__panel {
   background: var(--color-paper-2);
   border: 1px solid var(--color-rule);
@@ -63,7 +94,7 @@
   padding: var(--space-4);
   display: flex;
   flex-direction: column;
-  gap: var(--space-4);
+  gap: var(--space-3);
 }
 .cal__panel-title {
   font-family: var(--font-display);
@@ -73,66 +104,101 @@
   margin: 0;
 }
 
-.cal__points {
-  list-style: none;
+/* ─── Form-Fields (Linie + Kalibrierung) ───────────────────────────── */
+
+.cal__field {
   display: flex;
   flex-direction: column;
-  gap: var(--space-2);
-  margin: 0;
-  padding: 0;
-}
-.cal__point {
-  display: grid;
-  grid-template-columns: 24px 1fr 1fr;
-  align-items: center;
-  gap: var(--space-2);
-  padding: var(--space-1);
-  border-radius: var(--radius-sm);
-}
-.cal__point-num {
-  font-family: var(--font-display);
-  font-style: italic;
-  color: var(--color-accent);
-  text-align: center;
-}
-.cal__point label {
-  display: flex;
-  align-items: center;
   gap: var(--space-1);
   font-size: var(--text-xs);
   color: var(--color-muted);
 }
-.cal__point input {
-  width: 80px;
+.cal__field input {
   font-size: var(--text-sm);
 }
 
-.cal__meters {
-  display: flex;
-  gap: var(--space-2);
-}
-.cal__meters label {
-  flex: 1;
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-1);
-  font-size: var(--text-xs);
-  color: var(--color-muted);
-}
+/* ─── Save-Button (Primäraktion) ───────────────────────────────────── */
 
 .cal__save {
-  background: var(--color-accent);
+  background: oklch(72% 0.18 75);
   color: oklch(14% 0.008 75);
-  border-color: var(--color-accent);
+  border: 1px solid oklch(72% 0.18 75);
   font-weight: 600;
   padding: var(--space-3);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--text-sm);
 }
 .cal__save:hover:not(:disabled) {
-  background: var(--color-accent-2);
-  color: oklch(14% 0.008 75);
-  border-color: var(--color-accent-2);
+  background: oklch(78% 0.18 75);
+  border-color: oklch(78% 0.18 75);
+}
+.cal__save:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
 }
 
-.cal__msg { font-size: var(--text-sm); }
-.cal__msg--ok  { color: var(--color-ok); }
-.cal__msg--err { color: var(--color-danger); }
+/* ─── Linien-Tabelle (rechtes Panel) ───────────────────────────────── */
+
+.cal__lines-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-sm);
+}
+.cal__lines-table td {
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-rule);
+  vertical-align: top;
+}
+.cal__lines-table tr:last-child td { border-bottom: none; }
+
+/* ─── Buttons (Sekundäraktionen) ───────────────────────────────────── */
+
+.cal__btn {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  color: var(--color-ink-2);
+  font-size: var(--text-xs);
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+}
+.cal__btn:hover { background: var(--color-paper-3, var(--color-paper-2)); }
+.cal__btn--danger {
+  color: var(--color-danger, #c44);
+  border-color: var(--color-danger, #c44);
+}
+.cal__btn--danger:hover {
+  background: var(--color-danger, #c44);
+  color: oklch(98% 0 0);
+}
+
+.mono { font-family: var(--font-mono, monospace); }
+.muted { color: var(--color-muted); }
+
+/* ─── SVG-Styles (CSS-Variablen, da SVG-Attribute kein var() akzeptieren) ── */
+
+.cal__persisted-line {
+  stroke: var(--color-ink-2, #888);
+  stroke-width: 3;
+  stroke-dasharray: 8 4;
+}
+.cal__persisted-dot {
+  fill: var(--color-ink-2, #888);
+}
+
+.cal__current-line {
+  stroke: oklch(72% 0.18 75);
+  stroke-width: 4;
+}
+.cal__current-poly {
+  fill: oklch(72% 0.18 75 / 0.15);
+  stroke: oklch(72% 0.18 75);
+  stroke-width: 3;
+}
+.cal__current-dot {
+  fill: oklch(72% 0.18 75);
+}
+.cal__current-num {
+  fill: oklch(94% 0.006 75);
+}
