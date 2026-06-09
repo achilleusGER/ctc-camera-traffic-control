@@ -42,6 +42,7 @@ REMOTE="https://github.com/achilleusGER/ctc-camera-traffic-control.git"
 BRANCH="main"
 UNATTENDED=0
 RUN_SETUP=0
+RUN_DEPLOY=0
 SSH_KEY_FILE="${HOME}/.ssh/authorized_keys"
 
 # ── Farben (wie community-scripts) ──────────────────────────────────────
@@ -83,6 +84,9 @@ ${BOLD}Options:${CLR}
   --ssh-key FILE     Pfad zu authorized_keys (default: ${SSH_KEY_FILE})
   --unattended       Keine Rueckfragen
   --run-setup        Nach pct create sofort setup.sh im LXC ausfuehren
+  --deploy           Nach setup.sh automatisch Backend+Worker+Frontend installieren,
+                     .env + Services + nginx einrichten, Services starten
+                     (setzt --run-setup implizit voraus)
   --remote URL       Git-Remote (default: ${REMOTE})
   --branch NAME      Git-Branch (default: ${BRANCH})
   --help             Diese Hilfe
@@ -91,6 +95,7 @@ ${BOLD}Beispiele:${CLR}
   $0 --id 240                                      # Standard (DHCP)
   $0 --id 241 --ip 10.10.1.251/24 --gw 10.10.1.1   # statische IP
   $0 --id 240 --unattended --run-setup             # CI/Automation
+  $0 --id 240 --unattended --deploy                # Komplett-Setup inkl. App-Deploy
 
 EOF
     exit 0
@@ -111,6 +116,7 @@ while [[ $# -gt 0 ]]; do
         --ssh-key)   SSH_KEY_FILE="$2"; shift 2;;
         --unattended) UNATTENDED=1; shift;;
         --run-setup) RUN_SETUP=1; shift;;
+        --deploy)    RUN_DEPLOY=1; shift;;
         --remote)    REMOTE="$2"; shift 2;;
         --branch)    BRANCH="$2"; shift 2;;
         -h|--help)   usage;;
@@ -172,6 +178,7 @@ cat <<EOF
   Remote:       ${REMOTE}@${BRANCH}
   Unattended:   ${UNATTENDED}
   Run-Setup:    ${RUN_SETUP}
+  Deploy:       ${RUN_DEPLOY}
 EOF
 echo
 
@@ -180,7 +187,8 @@ if [[ $UNATTENDED -eq 0 ]]; then
     [[ "$ok" =~ ^j ]] || { msg_warn "Abgebrochen."; exit 0; }
 fi
 
-# ── LXC-ID-Konflikt? ──────────────────────────────────────────────────
+# --deploy setzt --run-setup implizit voraus
+[[ ${RUN_DEPLOY} -eq 1 ]] && RUN_SETUP=1
 if pct status "${LXC_ID}" &>/dev/null; then
     msg_err "LXC ${LXC_ID} existiert bereits. Andere ID waehlen oder loeschen:"
     echo "  pct stop ${LXC_ID} && pct destroy ${LXC_ID}" >&2
@@ -256,7 +264,8 @@ if [[ "${LXC_IP,,}" == "dhcp" ]]; then
     msg_info "Warte auf DHCP im LXC..."
     LXC_IP_PLAIN=""
     for i in $(seq 1 30); do
-        LXC_IP_PLAIN=$(get_lxc_ip)
+        # ip -4 -o addr gibt '10.10.1.101/23' zurueck; Maske abschneiden
+        LXC_IP_PLAIN=$(get_lxc_ip | cut -d/ -f1)
         if [[ -n "${LXC_IP_PLAIN}" ]] && pct exec "${LXC_ID}" -- ping -c 1 -W 1 8.8.8.8 &>/dev/null; then
             msg_ok "LXC hat DHCP-IP: ${LXC_IP_PLAIN} (nach ${i}*2s)"
             break
@@ -308,7 +317,6 @@ if [[ "${do_setup:-0}" -eq 1 ]]; then
     msg_ok "setup.sh fertig."
 fi
 
-# ── Abschluss ─────────────────────────────────────────────────────────
 # LXC_IP_PLAIN: bei DHCP haben wir oben schon die echte IP ermittelt,
 # bei statischer IP ist es die Konfig ohne /Mask.
 if [[ "${LXC_IP,,}" == "dhcp" ]]; then
@@ -316,6 +324,82 @@ if [[ "${LXC_IP,,}" == "dhcp" ]]; then
 else
     DISPLAY_IP="${LXC_IP%/*}"
 fi
+
+# ── App-Deploy (optional) ─────────────────────────────────────────────
+# Macht alles, was bisher per Hand im LXC noetig war:
+#   - Backend + Worker: venv, pip install -e, alembic upgrade head
+#   - Frontend: npm install, npm run build
+#   - .env aus Template kopieren (POSTGRES_PASSWORD bleibt erstmal 'traffic'!)
+#   - systemd-Units installieren
+#   - nginx-site einrichten
+#   - Services starten
+if [[ ${RUN_DEPLOY} -eq 1 ]]; then
+    msg_step "App-Deploy im LXC"
+
+    # 1) pip + npm + alembic
+    msg_info "Backend: venv + pip install -e + alembic upgrade head"
+    pct exec "${LXC_ID}" -- bash -c "
+        set -euo pipefail
+        cd /opt/trafficcontrol/src/backend
+        python3 -m venv .venv
+        .venv/bin/pip install --quiet --upgrade pip
+        .venv/bin/pip install --quiet -e .
+        .venv/bin/alembic upgrade head
+    "
+
+    msg_info "Worker: venv + pip install -e"
+    pct exec "${LXC_ID}" -- bash -c "
+        set -euo pipefail
+        cd /opt/trafficcontrol/src/worker
+        python3 -m venv .venv
+        .venv/bin/pip install --quiet --upgrade pip
+        .venv/bin/pip install --quiet -e .
+    "
+
+    # 2) Frontend (kann 1-2 Min dauern bei npm install)
+    msg_info "Frontend: npm install + build (kann 1-2 Min dauern)..."
+    pct exec "${LXC_ID}" -- bash -c "
+        set -euo pipefail
+        cd /opt/trafficcontrol/src/frontend
+        npm install --no-audit --no-fund
+        npm run build
+    "
+
+    # 3) .env anlegen (mit Default-Passwörtern, vor Prod unbedingt aendern)
+    msg_info "Lege /opt/trafficcontrol/.env mit Default-Passwoertern an (VOR PROD AENDERN!)"
+    pct exec "${LXC_ID}" -- bash -c "
+        cp /opt/trafficcontrol/src/lxc/.env.production /opt/trafficcontrol/.env
+        chown traffic:traffic /opt/trafficcontrol/.env
+        chmod 600 /opt/trafficcontrol/.env
+    "
+
+    # 4) systemd-Services
+    msg_info "systemd-Services installieren + aktivieren"
+    pct exec "${LXC_ID}" -- bash -c "
+        set -euo pipefail
+        cp /opt/trafficcontrol/src/lxc/systemd/*.service /opt/trafficcontrol/src/lxc/systemd/*.timer /etc/systemd/system/
+        systemctl daemon-reload
+        systemctl enable --now postgresql redis-server nginx
+        systemctl enable --now traffic-backend
+        systemctl enable --now traffic-worker@1
+        systemctl enable --now traffic-cleanup.timer
+    "
+
+    # 5) nginx
+    msg_info "nginx-Konfiguration einrichten"
+    pct exec "${LXC_ID}" -- bash -c "
+        set -euo pipefail
+        cp /opt/trafficcontrol/src/lxc/nginx.conf /etc/nginx/sites-available/trafficcontrol
+        rm -f /etc/nginx/sites-enabled/default
+        ln -sf /etc/nginx/sites-available/trafficcontrol /etc/nginx/sites-enabled/
+        nginx -t
+        systemctl reload nginx
+    "
+
+    msg_ok "App-Deploy fertig. Browser: http://${DISPLAY_IP}/"
+fi
+
+# ── Abschluss ─────────────────────────────────────────────────────────
 cat <<BANNER
 
 ${GN}============================================${CLR}
