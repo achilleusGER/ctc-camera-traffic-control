@@ -400,35 +400,42 @@ if [[ ${RUN_DEPLOY} -eq 1 ]]; then
 fi
 
 # ── Abschluss ─────────────────────────────────────────────────────────
-cat <<BANNER
+if [[ ${RUN_DEPLOY} -eq 1 ]]; then
+    cat <<BANNER
+
+${GN}============================================${CLR}
+${GN}  LXC ${LXC_ID} (${DISPLAY_IP}) ist startklar.${CLR}
+${GN}  App ist deployt und laeuft.${CLR}
+${GN}============================================${CLR}
+
+Browser:   http://${DISPLAY_IP}/
+SSH (root): ssh root@${DISPLAY_IP}   (oder: pct enter ${LXC_ID})
+
+Wichtige Defaults (VOR PROD AENDERN):
+  - POSTGRES_PASSWORD = 'traffic'   (in /opt/trafficcontrol/.env)
+  - DB-User/Db = traffic / traffic
+  - HTTPS nicht eingerichtet (LAN-Tool laut Q5)
+  - Beweisfoto-Retention: 30 Tage, taeglich 03:00 (cleanup-timer)
+
+Logs:    journalctl -u traffic-backend -f
+         journalctl -u traffic-worker@1 -f
+
+BANNER
+else
+    cat <<BANNER
 
 ${GN}============================================${CLR}
 ${GN}  LXC ${LXC_ID} (${DISPLAY_IP}) ist startklar.${CLR}
 ${GN}============================================${CLR}
 
-Naechste Schritte:
+Naechste Schritte (falls --deploy nicht genutzt):
 
-  pct enter ${LXC_ID}                                # in den LXC wechseln
+  pct enter ${LXC_ID}
   cd /opt/trafficcontrol/src
-  cd backend && python3 -m venv .venv && .venv/bin/pip install -e . && cd ..
-  cd worker  && python3 -m venv .venv && .venv/bin/pip install -e . && cd ..
-  cd frontend && npm install && npm run build && cd ..
+  bash lxc/deploy-app.sh          # pip + npm + alembic + restart
 
-  # .env mit Passwoertern anlegen
-  sudo cp lxc/.env.production /opt/trafficcontrol/.env
-  sudo nano /opt/trafficcontrol/.env
-
-  # Services starten
-  sudo cp lxc/systemd/*.service lxc/systemd/*.timer /etc/systemd/system/
-  sudo systemctl daemon-reload
-  sudo cp lxc/nginx.conf /etc/nginx/sites-available/trafficcontrol
-  sudo rm -f /etc/nginx/sites-enabled/default
-  sudo ln -s /etc/nginx/sites-available/trafficcontrol /etc/nginx/sites-enabled/
-  sudo systemctl enable --now postgresql redis-server nginx
-  sudo systemctl enable --now traffic-backend
-  sudo systemctl enable --now traffic-worker@1 traffic-worker@2 traffic-worker@3
-  sudo systemctl enable --now traffic-cleanup.timer
-
-  # Browser:  http://${DISPLAY_IP}/
+Oder mit dem Installer neu starten und --deploy nutzen:
+  bash proxmox-install.sh --id ${LXC_ID} --unattended --deploy
 
 BANNER
+fi
