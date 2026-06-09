@@ -12,6 +12,7 @@ from ..redis_bus import bus
 from ..schemas import (
     CameraConfigResponse,
     CameraCreate,
+    CameraDetail,
     CameraResponse,
     CameraUpdate,
 )
@@ -49,10 +50,22 @@ async def create_camera(
     return cam
 
 
-@router.get("/{camera_id}", response_model=CameraResponse)
+@router.get("/{camera_id}", response_model=CameraDetail)
 async def get_camera(camera_id: int, db: AsyncSession = Depends(get_db)) -> Camera:
-    cam = await db.get(Camera, camera_id)
-    if not cam:
+    """Camera + Linien + Kalibrierung in einem Query (selectinload).
+
+    Eine Call statt drei: der Kalibrierungs-Editor bekommt alles atomar,
+    kein Rennen zwischen 'Linie wurde gerade angelegt' und 'Reload der
+    Linien-Liste'.
+    """
+    stmt = (
+        select(Camera)
+        .options(selectinload(Camera.lines), selectinload(Camera.calibration))
+        .where(Camera.id == camera_id)
+    )
+    res = await db.execute(stmt)
+    cam = res.scalar_one_or_none()
+    if cam is None:
         raise HTTPException(status_code=404, detail="Camera not found")
     return cam
 

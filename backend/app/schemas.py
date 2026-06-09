@@ -82,6 +82,17 @@ class CameraResponse(CameraBase):
     created_at: datetime
 
 
+class CameraDetail(CameraResponse):
+    """Camera + alle abhaengigen Resourcen in einem Call (Kalibrierungs-Editor).
+
+    Backend nutzt selectinload(), damit der Frontend-Editor Camera + Linien
+    + Kalibrierung mit einer einzigen API-Call bekommt. Spart Round-Trips
+    und vermeidet inkonsistente Zwischenstaende beim Reload.
+    """
+    lines: list["CountingLineResponse"] = Field(default_factory=list)
+    calibration: "CalibrationResponse | None" = None
+
+
 # ─── CountingLine ───────────────────────────────────────────────────────────
 
 
