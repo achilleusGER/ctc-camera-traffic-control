@@ -26,6 +26,7 @@ apt-get install -y --no-install-recommends \
     nginx \
     ffmpeg \
     git curl ca-certificates openssl \
+    nodejs npm \
     sudo ufw
 
 # Hinweis: Auf aktuellen Debian-12 ist 'python3' = 3.11. Das ist OK — das
