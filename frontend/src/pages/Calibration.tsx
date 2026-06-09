@@ -10,7 +10,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useEffect, useRef, useState } from "react";
-import { useParams } from "react-router-dom";
+import { useNavigate, useParams } from "react-router-dom";
 import {
   api,
   fetchCalibration,
@@ -19,6 +19,7 @@ import {
   snapshotUrl,
 } from "../api/client";
 import type { CountingLine } from "../api/types";
+import { CameraPicker } from "../components/CameraPicker";
 import "./Calibration.css";
 
 type Pt = { x: number; y: number };
@@ -28,6 +29,7 @@ const MAX_PTS: Record<Mode, number> = { line: 2, calib: 4 };
 
 export function Calibration() {
   const { id } = useParams<{ id: string }>();
+  const navigate = useNavigate();
   const cameraId = Number(id);
   const qc = useQueryClient();
 
@@ -140,12 +142,26 @@ export function Calibration() {
   return (
     <div className="cal">
       <header className="cal__header">
-        <h1 className="cal__title">Kalibrierung</h1>
-        <p className="cal__sub">
-          {camera ? `Kamera ${camera.id} · ${camera.name}` : `Kamera ${cameraId}`} ·{" "}
-          {lines.length} {lines.length === 1 ? "Linie" : "Linien"} ·{" "}
-          {calQ.data ? "kalibriert" : "noch nicht kalibriert"}
-        </p>
+        <div className="cal__head-row">
+          <div>
+            <h1 className="cal__title">Kalibrierung</h1>
+            <p className="cal__sub">
+              {camera
+                ? `Kamera ${camera.id} · ${camera.name}`
+                : camerasQ.data && camerasQ.data.length > 0
+                  ? "Bitte Kamera wählen"
+                  : "Keine Kamera konfiguriert"}{" "}
+              {lines.length > 0 && (
+                <>· {lines.length} {lines.length === 1 ? "Linie" : "Linien"}</>
+              )}{" "}
+              {calQ.data && <>· kalibriert</>}
+            </p>
+          </div>
+          <CameraPicker
+            value={Number.isFinite(cameraId) && cameraId > 0 ? cameraId : null}
+            onChange={(newId) => navigate(`/calibration/${newId}`)}
+          />
+        </div>
       </header>
 
       <div className="cal__mode">

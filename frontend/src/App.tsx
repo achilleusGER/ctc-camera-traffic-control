@@ -1,6 +1,6 @@
 // App.tsx — Router, TanStack Query, Layout
 
-import { BrowserRouter, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { queryClient } from "./api/client";
 import { Layout } from "./components/Layout";
@@ -23,6 +23,7 @@ export default function App() {
             <Route path="violations" element={<Violations />} />
             <Route path="reports" element={<Reports />} />
             <Route path="cameras" element={<CameraAdmin />} />
+            <Route path="calibration" element={<Navigate to="/cameras" replace />} />
             <Route path="calibration/:id" element={<Calibration />} />
           </Route>
         </Routes>

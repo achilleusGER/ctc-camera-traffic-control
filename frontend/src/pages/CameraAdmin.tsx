@@ -2,6 +2,7 @@
 
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useState } from "react";
+import { Link } from "react-router-dom";
 import { fetchCameras, fetchStreets, QK, api } from "../api/client";
 import { formatNumber } from "../lib/format";
 import "./CameraAdmin.css";
@@ -208,6 +209,13 @@ export function CameraAdmin() {
                 </span>
               </div>
               <div className="cadmin__row-actions">
+                <Link
+                  to={`/calibration/${c.id}`}
+                  className="cadmin__toggle"
+                  title="Zähllinien zeichnen + Perspektive setzen"
+                >
+                  Kalibrieren
+                </Link>
                 <button
                   className="cadmin__toggle"
                   onClick={() => toggleCam.mutate({ id: c.id, enabled: !c.enabled })}

@@ -1,4 +1,9 @@
 // LiveView — H6 Photographic fold: 1 Kamera groß, Kamera-Picker
+//
+// Wenn der Worker fuer die gewaehlte Kamera nicht laeuft, kommt kein
+// Frame in Redis und der Stream bleibt schwarz. Wir zeigen dann einen
+// klaren Hinweis mit dem passenden systemctl-Befehl, statt ein
+// nichtssagendes "Kein Bild" zu zeigen.
 
 import { useQuery } from "@tanstack/react-query";
 import { useState } from "react";
@@ -8,6 +13,7 @@ import "./LiveView.css";
 export function LiveView() {
   const { data: cameras = [] } = useQuery({ queryKey: QK.cameras, queryFn: () => fetchCameras() });
   const [selectedId, setSelectedId] = useState<number | null>(null);
+  const [streamOk, setStreamOk] = useState(true);
   const activeId = selectedId ?? cameras[0]?.id ?? null;
   const active = cameras.find((c) => c.id === activeId);
 
@@ -20,20 +26,37 @@ export function LiveView() {
         </p>
       </header>
 
-      {activeId ? (
-        <figure className="live__frame">
-          <img
-            src={`/api/cameras/${activeId}/stream.mjpg?fps=10`}
-            alt={`Live-Stream ${active?.name ?? activeId}`}
-            className="live__img"
-          />
-          <figcaption className="live__caption">
-            <span className="live__cam-name">{active?.name}</span>
-            {active?.default_speed_limit_kmh != null && (
-              <span className="live__limit mono">Limit {active.default_speed_limit_kmh} km/h</span>
-            )}
-          </figcaption>
-        </figure>
+      {activeId && active ? (
+        <>
+          <figure className="live__frame">
+            <img
+              src={`/api/cameras/${activeId}/stream.mjpg?fps=10&t=${Date.now()}`}
+              alt={`Live-Stream ${active.name}`}
+              className="live__img"
+              onLoad={() => setStreamOk(true)}
+              onError={() => setStreamOk(false)}
+            />
+            <figcaption className="live__caption">
+              <span className="live__cam-name">{active.name}</span>
+              {active.default_speed_limit_kmh != null && (
+                <span className="live__limit mono">Limit {active.default_speed_limit_kmh} km/h</span>
+              )}
+            </figcaption>
+          </figure>
+
+          {!streamOk && (
+            <div className="live__warn">
+              <p><strong>Kein Bild.</strong> Wahrscheinlich läuft der Worker für diese Kamera nicht.</p>
+              <p className="mono">
+                sudo systemctl status traffic-worker@{activeId}
+              </p>
+              <p>Starten mit:</p>
+              <p className="mono">
+                sudo systemctl enable --now traffic-worker@{activeId}
+              </p>
+            </div>
+          )}
+        </>
       ) : (
         <div className="live__empty">
           <p>Keine Kamera konfiguriert.</p>
@@ -43,20 +66,25 @@ export function LiveView() {
         </div>
       )}
 
-      {cameras.length > 1 && (
-        <ul className="live__picker">
-          {cameras.map((c) => (
-            <li key={c.id}>
-              <button
-                className={c.id === activeId ? "live-picker live-picker--active" : "live-picker"}
-                onClick={() => setSelectedId(c.id)}
-              >
-                <span className={`live-picker__dot live-picker__dot--${c.enabled ? "ok" : "down"}`} />
-                {c.name}
-              </button>
-            </li>
-          ))}
-        </ul>
+      {cameras.length > 0 && (
+        <div className="live__picker-wrap">
+          <label className="live__picker-label">Kamera:</label>
+          <select
+            className="live__picker"
+            value={activeId ?? ""}
+            onChange={(e) => {
+              setSelectedId(Number(e.target.value));
+              setStreamOk(true);
+            }}
+          >
+            {cameras.map((c) => (
+              <option key={c.id} value={c.id}>
+                {c.enabled ? "●" : "○"} {c.name}
+                {c.street_id ? "" : " (keine Straße)"}
+              </option>
+            ))}
+          </select>
+        </div>
       )}
     </div>
   );

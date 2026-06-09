@@ -11,6 +11,49 @@
 }
 .live__sub { color: var(--color-muted); font-size: var(--text-sm); }
 
+/* Warn-Box wenn MJPEG-Stream kein Bild liefert (Worker nicht aktiv) */
+.live__warn {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-accent, oklch(72% 0.18 75));
+  border-left: 4px solid var(--color-accent, oklch(72% 0.18 75));
+  border-radius: var(--radius-md);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+.live__warn p { margin: 0; }
+.live__warn strong { color: var(--color-ink); }
+
+/* Camera-Picker als Dropdown statt Pill-Liste */
+.live__picker-wrap {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-md);
+  padding: var(--space-3);
+}
+.live__picker-label {
+  font-size: var(--text-xs);
+  color: var(--color-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.live__picker {
+  flex: 1;
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-sm);
+  background: var(--color-paper-2);
+  color: var(--color-ink);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-sm);
+  padding: var(--space-2) var(--space-3);
+  cursor: pointer;
+}
+
 .live__frame {
   background: oklch(8% 0.005 75);
   border: 1px solid var(--color-rule);
