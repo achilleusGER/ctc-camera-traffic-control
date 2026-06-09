@@ -1,6 +1,7 @@
 // AppShell: N5 Floating Pill Nav (top-centered, blur backdrop) + Content + Ft5 Statement Footer.
 
 import { Link, NavLink, Outlet } from "react-router-dom";
+import { ErrorBoundary } from "./ErrorBoundary";
 import "./Layout.css";
 
 const navItems = [
@@ -41,7 +42,9 @@ export function Layout() {
       </nav>
 
       <main className="layout__main">
-        <Outlet />
+        <ErrorBoundary>
+          <Outlet />
+        </ErrorBoundary>
       </main>
 
       {/* Ft5 Statement Footer */}

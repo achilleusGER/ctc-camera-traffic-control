@@ -1,0 +1,54 @@
+/* Hallmark · ErrorBoundary */
+
+.errbox {
+  background: var(--color-paper-2);
+  border: 1px solid var(--color-danger, #c44);
+  border-radius: var(--radius-md);
+  padding: var(--space-6);
+  margin: var(--space-4) auto;
+  max-width: 640px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+.errbox__title {
+  font-family: var(--font-display);
+  font-size: var(--text-xl);
+  font-style: italic;
+  color: var(--color-danger, #c44);
+  margin: 0;
+}
+.errbox__sub {
+  color: var(--color-muted);
+  font-size: var(--text-sm);
+  margin: 0;
+}
+.errbox__trace {
+  font-family: var(--font-mono, monospace);
+  font-size: var(--text-xs);
+  color: var(--color-ink-2);
+  background: oklch(8% 0.005 75);
+  border: 1px solid var(--color-rule);
+  border-radius: var(--radius-sm);
+  padding: var(--space-3);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 240px;
+  overflow: auto;
+  margin: 0;
+}
+.errbox__btn {
+  align-self: flex-start;
+  background: var(--color-accent);
+  color: oklch(14% 0.008 75);
+  border: 1px solid var(--color-accent);
+  font-weight: 600;
+  padding: var(--space-2) var(--space-4);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--text-sm);
+}
+.errbox__btn:hover {
+  background: var(--color-accent-2);
+  border-color: var(--color-accent-2);
+}
