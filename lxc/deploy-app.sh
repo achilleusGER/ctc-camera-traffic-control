@@ -47,7 +47,9 @@ cd "${SRC}/worker"
 # 4) Frontend
 LOG "Frontend: npm ci + build…"
 cd "${SRC}/frontend"
-[[ -d node_modules ]] || npm ci
+# package-lock.json wird im Repo nicht committed (.gitignore)
+# Daher 'npm install' statt 'npm ci' — npm ci braucht eine vorhandene lockfile.
+[[ -d node_modules ]] || npm install --no-audit --no-fund
 npm run build
 
 # 5) DB-Migration
