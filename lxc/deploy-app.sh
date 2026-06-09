@@ -57,6 +57,32 @@ LOG "DB-Migrationen…"
 cd "${SRC}/backend"
 .venv/bin/alembic upgrade head
 
+# 5.1) .env aus Template uebernehmen (falls noch nicht da)
+if [[ ! -f /opt/trafficcontrol/.env ]]; then
+    LOG ".env aus Template uebernehmen…"
+    sudo cp "${SRC}/lxc/.env.production" /opt/trafficcontrol/.env
+    sudo chown traffic:traffic /opt/trafficcontrol/.env
+    sudo chmod 600 /opt/trafficcontrol/.env
+    LOG "WICHTIG: Default-Passwoerter vor Produktion aendern (VOR PROD AENDERN!)"
+fi
+
+# 5.2) systemd-Units + nginx-Site (idempotent, nur installieren wenn nicht da)
+if [[ ! -f /etc/systemd/system/traffic-backend.service ]]; then
+    LOG "systemd-Units + nginx-Site installieren…"
+    sudo cp "${SRC}/lxc/systemd/"*.service "${SRC}/lxc/systemd/"*.timer /etc/systemd/system/
+    sudo cp "${SRC}/lxc/nginx.conf" /etc/nginx/sites-available/trafficcontrol
+    sudo rm -f /etc/nginx/sites-enabled/default
+    sudo ln -sf /etc/nginx/sites-available/trafficcontrol /etc/nginx/sites-enabled/
+    sudo systemctl daemon-reload
+    sudo systemctl enable --now postgresql redis-server nginx
+    sudo systemctl enable --now traffic-backend
+    sudo systemctl enable --now traffic-worker@1
+    sudo systemctl enable --now traffic-cleanup.timer
+    sudo nginx -t && sudo systemctl reload nginx
+else
+    LOG "systemd-Units bereits installiert — ueberspringe Kopieren."
+fi
+
 # 6) Services restarten
 LOG "Services restarten…"
 sudo systemctl restart traffic-backend
