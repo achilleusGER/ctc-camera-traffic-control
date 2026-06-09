@@ -11,7 +11,7 @@ Group=traffic
 WorkingDirectory=/opt/trafficcontrol/src/worker
 Environment=CAMERA_ID=%i
 EnvironmentFile=/opt/trafficcontrol/.env
-ExecStart=/opt/trafficcontrol/src/worker/.venv/bin/python -m worker.main
+ExecStart=/opt/trafficcontrol/src/worker/.venv/bin/python -m worker.main --camera-id %i
 Restart=always
 RestartSec=5
 TimeoutStopSec=15

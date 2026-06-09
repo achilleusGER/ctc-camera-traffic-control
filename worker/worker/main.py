@@ -51,7 +51,7 @@ def main() -> None:
     parser.add_argument(
         "--camera-id",
         type=int,
-        default=os.getenv("CAMERA_ID") and int(os.getenv("CAMERA_ID")),  # type: ignore[arg-type]
+        default=(int(os.environ["CAMERA_ID"]) if os.environ.get("CAMERA_ID") else None),
         help="Kamera-ID (Default: $CAMERA_ID). Lädt Config vom Backend.",
     )
     parser.add_argument(
