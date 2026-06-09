@@ -148,7 +148,7 @@ Nächste Schritte (als traffic-User):
         sudo systemctl enable --now postgresql redis-server nginx
         sudo systemctl enable --now traffic-backend
         sudo systemctl enable --now traffic-worker@1   # für Kamera 1
-  6. Im Browser:  http://10.10.1.231/    # (deine DHCP-IP, siehe 'ip a')
+  6. Im Browser:  http://<lxc-dhcp-ip>/    # ermitteln mit 'ip a'
 
 DB-Credentials:  ${PG_USER} / ${PG_PASS} / ${PG_DB}  (localhost only)
 Backup-Hinweis (Q6):  Proxmox-LXC-Snapshot inkl. /var/lib/trafficcontrol + Postgres-Volumen.
