@@ -1,13 +1,14 @@
-"""CRUD: Kameras + Worker-Config-Endpoint."""
+"""CRUD: Kameras + Worker-Config-Endpoint + Snapshot für Editor."""
 from __future__ import annotations
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Response, status
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
 
 from ..db import get_db
 from ..models import Camera, Calibration, CountingLine, Street
+from ..redis_bus import bus
 from ..schemas import (
     CameraConfigResponse,
     CameraCreate,
@@ -136,3 +137,19 @@ async def get_camera_config(
         model_variant=cam.model_variant,
         infer_width=cam.infer_width,
     )
+
+
+# ─── Snapshot für Editor (Kalibrierung, Linien setzen) ───────────────────
+#
+# Liefert den letzten vom Worker publishten Frame (annotated oder raw) aus
+# Redis. Wenn kein Worker läuft, kommt 404 — das ist OK, der Editor zeigt
+# dann einen Hinweis statt eines stale Frames.
+@router.get("/{camera_id}/snapshot")
+async def get_camera_snapshot(camera_id: int) -> Response:
+    frame = await bus.get_frame(camera_id)
+    if frame is None:
+        raise HTTPException(
+            status_code=404,
+            detail="Kein Frame verfügbar – läuft der Worker?",
+        )
+    return Response(content=frame, media_type="image/jpeg")

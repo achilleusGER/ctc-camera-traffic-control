@@ -62,6 +62,14 @@ export async function fetchLines(cameraId: number): Promise<CountingLine[]> {
 export async function fetchCalibration(cameraId: number): Promise<Calibration | null> {
   return (await api.get<Calibration | null>(`/cameras/${cameraId}/calibration/`)).data;
 }
+
+// Snapshot-URL für den Kalibrierungs-/Linien-Editor. Der Browser holt das
+// JPEG direkt; der Cache-Buster (Date.now()) sorgt dafür, dass beim
+// Neuladen der Editor-Seite immer das aktuelle Bild geladen wird, nicht
+// der stale Cache. Bewusst KEIN useQuery, weil <img src=...> einfacher ist.
+export function snapshotUrl(cameraId: number, bust: number = Date.now()): string {
+  return `${baseURL}/cameras/${cameraId}/snapshot?t=${bust}`;
+}
 export async function fetchCountsToday(cameraId?: number): Promise<CountsByClass[]> {
   return (await api.get<CountsByClass[]>("/stats/today", { params: cameraId ? { camera_id: cameraId } : {} })).data;
 }
