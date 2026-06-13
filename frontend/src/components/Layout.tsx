@@ -7,7 +7,7 @@ import "./Layout.css";
 const navItems = [
   { to: "/", label: "Übersicht", end: true },
   { to: "/live", label: "Live" },
-  { to: "/violations", label: "Verstöße" },
+  { to: "/log", label: "Verstöße" },
   { to: "/reports", label: "Reports" },
   { to: "/cameras", label: "Kameras" },
 ];

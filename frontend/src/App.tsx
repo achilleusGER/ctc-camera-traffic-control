@@ -7,6 +7,7 @@ import { Layout } from "./components/Layout";
 import { Dashboard } from "./pages/Dashboard";
 import { LiveView } from "./pages/LiveView";
 import { Violations } from "./pages/Violations";
+import { ViolationDetail } from "./pages/ViolationDetail";
 import { Reports } from "./pages/Reports";
 import { CameraAdmin } from "./pages/CameraAdmin";
 import { Calibration } from "./pages/Calibration";
@@ -20,7 +21,9 @@ export default function App() {
           <Route path="/" element={<Layout />}>
             <Route index element={<Dashboard />} />
             <Route path="live" element={<LiveView />} />
-            <Route path="violations" element={<Violations />} />
+            <Route path="log" element={<Violations />} />
+            <Route path="log/:id" element={<ViolationDetail />} />
+            <Route path="violations" element={<Navigate to="/log" replace />} />
             <Route path="reports" element={<Reports />} />
             <Route path="cameras" element={<CameraAdmin />} />
             <Route path="calibration" element={<Navigate to="/cameras" replace />} />

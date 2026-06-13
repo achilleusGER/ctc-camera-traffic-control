@@ -3,7 +3,7 @@ from __future__ import annotations
 
 from datetime import datetime
 
-from fastapi import APIRouter, Depends, Query
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy.orm import selectinload
@@ -42,3 +42,21 @@ async def list_violations(
     stmt = stmt.order_by(CrossingEvent.ts.desc()).limit(limit)
     res = await db.execute(stmt)
     return list(res.scalars().all())
+
+
+@router.get("/{event_id}", response_model=CrossingEventResponse)
+async def get_violation(
+    event_id: int,
+    db: AsyncSession = Depends(get_db),
+) -> CrossingEvent:
+    stmt = (
+        select(CrossingEvent)
+        .options(selectinload(CrossingEvent.plates))
+        .where(CrossingEvent.id == event_id)
+        .where(CrossingEvent.is_speeding.is_(True))
+    )
+    res = await db.execute(stmt)
+    event = res.scalar_one_or_none()
+    if event is None:
+        raise HTTPException(status_code=404, detail="Violation not found")
+    return event
