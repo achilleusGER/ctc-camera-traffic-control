@@ -25,7 +25,7 @@ async def get_evidence(path: str) -> FileResponse:
     p = _safe_resolve(path)
     if not p.is_file():
         raise HTTPException(status_code=404, detail="Evidence not found")
-    return FileResponse(p)
+    return FileResponse(p, headers={"Cache-Control": "no-cache, must-revalidate"})
 
 
 @router.get("/health")

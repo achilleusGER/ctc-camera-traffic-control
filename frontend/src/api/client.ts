@@ -43,6 +43,7 @@ export const QK = {
     ["speed-hist", range] as const,
   violations: (range: { cameraId?: number; since?: string; until?: string; limit?: number }) =>
     ["violations", range] as const,
+  violation: (id: number) => ["violation", id] as const,
   events: (range: { cameraId?: number; since?: string; until?: string; limit?: number }) =>
     ["events", range] as const,
   storage: ["storage"] as const,
@@ -84,6 +85,9 @@ export async function fetchSpeedHistogram(range: { since?: string; until?: strin
 }
 export async function fetchViolations(range: { cameraId?: number; since?: string; until?: string; limit?: number }): Promise<CrossingEvent[]> {
   return (await api.get<CrossingEvent[]>("/violations/", { params: range })).data;
+}
+export async function fetchViolation(id: number): Promise<CrossingEvent> {
+  return (await api.get<CrossingEvent>(`/violations/${id}`)).data;
 }
 export async function fetchStorageInfo(): Promise<StorageInfo> {
   return (await api.get<StorageInfo>("/admin/storage-info")).data;
